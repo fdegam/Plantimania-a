@@ -624,3 +624,14 @@ input[type=range]:focus-visible { outline: 1.5px dashed var(--stamp); outline-of
 .iso-rot[hidden] { display: none; }
 .iso-rot .label { padding-left: 0; }
 @media (max-width: 860px) { .iso-rot { left: auto; right: 18px; top: 16px; } }
+
+/* ---------- firma: EFEDEGAM en cursiva y enlazada al portafolio ---------- */
+.firma {
+  font: italic 500 1.18em/1 var(--font-display);
+  letter-spacing: .05em; text-transform: uppercase;
+  color: inherit; text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color .2s;
+}
+.firma:hover { border-bottom-color: currentColor; }
+.firma:focus-visible { outline: 1.5px dashed currentColor; outline-offset: 3px; }
