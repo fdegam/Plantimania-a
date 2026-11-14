@@ -6,7 +6,7 @@ const PERIMETRO = 0, CONTORNO = 1, DETALLE = 2, RAICES = 3;
 export function readColors(el) {
   const cs = getComputedStyle(el);
   const v = n => cs.getPropertyValue(n).trim();
-  return {ink: v("--draw-ink"), fill: v("--draw-fill"), shadow: v("--draw-shadow"), muted: v("--muted"), stamp: v("--stamp"), paper: v("--draw-fill")};
+  return {ink: v("--draw-ink"), fill: v("--draw-fill"), shadow: v("--draw-shadow"), muted: v("--muted"), stamp: v("--stamp"), paper: v("--draw-fill"), ui: v("--ink")};
 }
 
 // Coloca las vistas en fila, alineadas por abajo (unidades del mundo).
@@ -141,11 +141,11 @@ function drawScaleBar(ctx, sc, opts, colors) {
   const step = steps.find(s => s * sc >= 36) || 10;
   const n = 4, x0 = opts.scaleX, y0 = opts.scaleY;
   ctx.save();
-  ctx.fillStyle = colors.ink; ctx.strokeStyle = colors.ink; ctx.lineWidth = 1;
+  ctx.fillStyle = colors.ui; ctx.strokeStyle = colors.ui; ctx.lineWidth = 1;
   for (let i = 0; i < n; i += 2) ctx.fillRect(x0 + i * step * sc, y0 - 4, step * sc, 4);
   ctx.strokeRect(x0 + 0.5, y0 - 4.5, n * step * sc, 4);
   ctx.font = "500 11px Manrope, system-ui, sans-serif";
-  ctx.textAlign = "center"; ctx.fillStyle = colors.ink;
+  ctx.textAlign = "center"; ctx.fillStyle = colors.ui;
   for (let i = 0; i <= n; i++) {
     const v = Math.round(i * step * 100) / 100;
     ctx.fillText(v.toLocaleString("es-ES") + (i === n ? " m" : ""), x0 + i * step * sc, y0 + 14);
@@ -167,3 +167,82 @@ function drawHeight(ctx, scene, colors) {
   ctx.fillText(b[3].toLocaleString("es-ES", {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " m", 0, 0);
   ctx.restore();
 }
+
+/* ---------- transición 3D entre vistas ---------- */
+// Cámara de cada vista: acimut (giro alrededor del eje vertical) y elevación.
+// Coincide con proj() del motor: alzado (0°, 0°), planta (0°, 90°) e isométrica (45° + giro, 35,26°).
+const ISO_EL = Math.asin(Math.tan(Math.PI / 6));
+export function cameraFor(view, isoRot = 0) {
+  if (view === "planta") return {az: 0, el: Math.PI / 2};
+  if (view === "iso") return {az: (45 + isoRot) * Math.PI / 180, el: ISO_EL};
+  return {az: 0, el: 0};
+}
+
+function projector(cam) {
+  const ca = Math.cos(cam.az), sa = Math.sin(cam.az), ce = Math.cos(cam.el), se = Math.sin(cam.el);
+  // devuelve [x pantalla, y pantalla, profundidad] en metros (mayor profundidad = más cerca)
+  return (x, y, z) => { const x1 = x * ca + z * sa, z1 = -x * sa + z * ca; return [x1, y * ce - z1 * se, z1 * ce + y * se]; };
+}
+
+// Caja del esqueleto vista con una cámara (para encajarlo en pantalla).
+export function skeletonBounds(skel, cam) {
+  const P = projector(cam), bb = [Infinity, Infinity, -Infinity, -Infinity];
+  const add = (x, y, r = 0) => { bb[0] = Math.min(bb[0], x - r); bb[1] = Math.min(bb[1], y - r); bb[2] = Math.max(bb[2], x + r); bb[3] = Math.max(bb[3], y + r); };
+  const c = skel.clumps;
+  for (let i = 0; i < c.length; i += 5) { const q = P(c[i], c[i + 1], c[i + 2]); add(q[0], q[1], c[i + 3]); }
+  for (const g of [skel.limbs, skel.leaves, skel.rocks]) for (let i = 0; i < g.xyz.length; i += 3) { const q = P(g.xyz[i], g.xyz[i + 1], g.xyz[i + 2]); add(q[0], q[1]); }
+  return bb;
+}
+
+// Dibuja el esqueleto con una cámara intermedia. tf = {sc, X0, Y0}: escala y posición en
+// pantalla del origen (pie de la planta).
+export function drawSkeleton(ctx, skel, cam, tf, colors) {
+  const P = projector(cam), {sc, X0, Y0} = tf, ce = Math.cos(cam.el), se = Math.sin(cam.el);
+  const S = (q) => [X0 + q[0] * sc, Y0 - q[1] * sc];
+  const items = [];
+  const c = skel.clumps;
+  for (let i = 0; i < c.length; i += 5) {
+    const q = P(c[i], c[i + 1], c[i + 2]), r = c[i + 3], ry = r * Math.sqrt((c[i + 4] * ce) ** 2 + se * se);
+    items.push({d: q[2], k: 0, q, r, ry});
+  }
+  const ring = (g, i, k, extra) => {
+    const pts = [];
+    let d = 0;
+    for (let j = g.start[i]; j < g.start[i + 1]; j++) { const q = P(g.xyz[3 * j], g.xyz[3 * j + 1], g.xyz[3 * j + 2]); pts.push(q); d += q[2]; }
+    if (pts.length > 1) items.push({d: d / pts.length, k, pts, ...extra});
+  };
+  for (let i = 0; i < skel.limbs.start.length - 1; i++) ring(skel.limbs, i, 1, {w: (skel.limbs.w[2 * i] + skel.limbs.w[2 * i + 1]) / 2});
+  for (let i = 0; i < skel.twigs.start.length - 1; i++) ring(skel.twigs, i, 2);
+  for (let i = 0; i < skel.leaves.start.length - 1; i++) ring(skel.leaves, i, 3);
+  for (let i = 0; i < skel.rocks.start.length - 1; i++) ring(skel.rocks, i, 4);
+  items.sort((a, b) => a.d - b.d);          // de lejos a cerca
+  ctx.save();
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  const ink = colors.ink, fill = colors.fill, thin = Math.max(0.7, Math.min(1.6, sc * 0.006));
+  const path = it => { ctx.beginPath(); it.pts.forEach((q, j) => { const [x, y] = S(q); j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); };
+  // 1) ramas y ramillas, detrás de la copa
+  for (const it of items) {
+    if (it.k === 1) {
+      path(it); const w = Math.max(1, it.w * 2 * sc);
+      ctx.strokeStyle = ink; ctx.lineWidth = w + thin * 2.4; ctx.stroke();
+      ctx.strokeStyle = fill; ctx.lineWidth = w; ctx.stroke();
+    } else if (it.k === 2) { path(it); ctx.strokeStyle = ink; ctx.lineWidth = thin; ctx.stroke(); }
+  }
+  // 2) la copa como una sola silueta: contorno de tinta por fuera y relleno dentro,
+  //    igual que el perímetro del dibujo final
+  const masses = items.filter(it => it.k === 0);
+  if (masses.length) {
+    const blob = grow => { const P2 = new Path2D(); for (const it of masses) { const [x, y] = S(it.q); P2.ellipse(x, y, it.r * sc + grow, it.ry * sc + grow, 0, 0, Math.PI * 2); } return P2; };
+    ctx.fillStyle = ink; ctx.fill(blob(thin * 1.8), "nonzero");
+    ctx.fillStyle = fill; ctx.fill(blob(0), "nonzero");
+  }
+  // 3) hojas sueltas y rocas, de lejos a cerca
+  for (const it of items) {
+    if (it.k < 3) continue;
+    path(it); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = ink; ctx.lineWidth = thin; ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// Barra de escala sola (para los fotogramas de la transición).
+export function drawScale(ctx, sc, opts, colors) { drawScaleBar(ctx, sc, opts, colors); }

@@ -84,7 +84,7 @@
   </nav>
 
   <main class="sheet" id="stage">
-    <canvas id="cv" tabindex="0" aria-label="Dibujo de la planta. Haz clic o pulsa Intro para sacudirla; arrastra para doblar una rama."></canvas>
+    <canvas id="cv" tabindex="0" aria-label="Dibujo de la planta. Arrastra una rama para doblarla."></canvas>
     <div class="ficha" aria-live="polite">
       <p class="kicker" id="f_vista">Alzado</p>
       <h2 id="f_nombre">Olivo</h2>
@@ -92,17 +92,24 @@
       <p class="busy" id="busy" hidden>Dibujando</p>
     </div>
     <p class="meta" id="meta"></p>
-    <p class="hint" id="hint">Toca la planta para sacudirla o arrástrala para doblar una rama</p>
+    <div class="iso-rot" id="isoRot" hidden>
+      <span class="label">Girar isométrica</span>
+      <div class="seg icons">
+        <button id="isoIzq" aria-label="Girar la isométrica 90° a la izquierda"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 8a6 6 0 1 1 0 4.5M5 3.5V8h4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button id="isoDer" aria-label="Girar la isométrica 90° a la derecha"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M15 8a6 6 0 1 0 0 4.5M15 3.5V8h-4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+    </div>
+    <p class="hint" id="hint">Arrastra una rama para doblarla</p>
 
     <div class="dock" aria-label="Controles">
       <div class="group">
         <span class="label" id="l_especie">Especie</span>
         <select id="tipo" aria-labelledby="l_especie">
           <optgroup label="Árboles de copa en masas">
-            <option value="platano">Árbol de sombra (plátano, tilo)</option>
+            <option value="platano" selected>Árbol de sombra (plátano, tilo)</option>
             <option value="redonda">Copa redonda (arce, catalpa)</option>
             <option value="encina">Encina o quercus</option>
-            <option value="olivo" selected>Olivo</option>
+            <option value="olivo">Olivo</option>
             <option value="pino">Pino piñonero</option>
             <option value="cipres">Ciprés</option>
             <option value="conifera">Conífera cónica (pícea, abeto)</option>
@@ -134,8 +141,8 @@
       <div class="group">
         <span class="label" id="l_estacion">Estación</span>
         <div class="seg seasons" role="radiogroup" aria-labelledby="l_estacion" id="estSeg">
-          <button role="radio" data-s="primavera" aria-checked="false">Primavera</button>
-          <button role="radio" data-s="verano" aria-checked="true">Verano</button>
+          <button role="radio" data-s="primavera" aria-checked="true">Primavera</button>
+          <button role="radio" data-s="verano" aria-checked="false">Verano</button>
           <button role="radio" data-s="otono" aria-checked="false">Otoño</button>
           <button role="radio" data-s="invierno" aria-checked="false">Invierno</button>
         </div>

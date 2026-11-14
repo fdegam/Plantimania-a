@@ -1,7 +1,7 @@
 import {SPECIES, GROVE} from "./engine/species.js";
 import {DEFAULT_SETTINGS, speciesDefaults, buildParams} from "./params.js";
 import {Motion} from "./motion.js";
-import {readColors, layoutScene, fit, pick, drawScene} from "./render.js";
+import {readColors, layoutScene, fit, pick, drawScene, cameraFor, skeletonBounds, drawSkeleton, drawScale} from "./render.js";
 import {heroScene} from "./hero.js";
 import {createLanding} from "./landing.js";
 import {initLiquidGlass} from "./liquidGlass.js";
@@ -12,10 +12,10 @@ const fmtNum = (v, d = 1) => Number(v).toLocaleString("es-ES", {minimumFractionD
 
 /* ---------- estado ---------- */
 const state = {
-  species: "olivo",
+  species: "platano",
   seed: 128,
   view: "alzado",
-  values: {...DEFAULT_SETTINGS, ...speciesDefaults("olivo")},
+  values: {...DEFAULT_SETTINGS, ...speciesDefaults("platano")},
 };
 const motion = new Motion();
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -48,7 +48,9 @@ function requestDraw(delay = 0) {
     try {
       const res = await ask({type: "draw", params: p, views: list});
       if (id !== latest) return;
+      if (res.skeleton) lastSkel = res.skeleton;
       setScene(p, list, res.views, res.name);
+      if (tr) tr.ready = true;
       showSimplification(p, res.stats);
     } catch (err) {
       console.error(err);
@@ -94,11 +96,51 @@ function resize() {
 }
 
 function paint() {
+  if (tr) return;                       // durante el cambio de vista dibuja la transición
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssW, cssH);
   if (!scene || !scene.fitted) return;
   const inset = dockInset();
   drawScene(ctx, scene, motion, colors, {scaleX: Math.max(24, cssW * 0.04), scaleY: cssH - inset.bottom - 22});
+}
+
+/* ---------- cambio de vista en 3D ---------- */
+// Al pasar de alzado a planta o a isométrica (o al girar la isométrica), la cámara gira
+// alrededor de un esqueleto ligero de la planta mientras el motor calcula el dibujo
+// definitivo; al llegar, el esqueleto se funde con el dibujo final.
+let lastSkel = null, tr = null;
+const MOVE_MS = 950, FADE_MS = 280;
+const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const lerp = (a, b, t) => a + (b - a) * t;
+const scaleOpts = () => ({scaleX: Math.max(24, cssW * 0.04), scaleY: cssH - dockInset().bottom - 22});
+
+function startTransition(from, to) {
+  if (reduceMotion.matches || !lastSkel || !scene?.fitted || scene.layout.items.length !== 1) return;
+  const it = scene.layout.items[0], f0 = scene.fitted;
+  const bb = skeletonBounds(lastSkel, to), pad = Math.max(bb[2] - bb[0], bb[3] - bb[1]) * 0.06;
+  const f1 = fit({bb: [bb[0] - pad, Math.min(bb[1], 0) - pad, bb[2] + pad, bb[3] + pad]}, cssW, cssH, dockInset());
+  tr = {from, to, t0: performance.now(), ready: false, fade: null,
+    tf0: {sc: f0.sc, X0: f0.ox + it.dx * f0.sc, Y0: f0.oy - it.dy * f0.sc},
+    tf1: {sc: f1.sc, X0: f1.ox, Y0: f1.oy}};
+  requestAnimationFrame(stepTransition);
+}
+
+function stepTransition(now) {
+  if (!tr) return;
+  const t = Math.min(1, (now - tr.t0) / MOVE_MS), e = ease(t);
+  const cam = {az: lerp(tr.from.az, tr.to.az, e), el: lerp(tr.from.el, tr.to.el, e)};
+  const tf = {sc: lerp(tr.tf0.sc, tr.tf1.sc, e), X0: lerp(tr.tf0.X0, tr.tf1.X0, e), Y0: lerp(tr.tf0.Y0, tr.tf1.Y0, e)};
+  if (t >= 1 && tr.ready && tr.fade === null) tr.fade = now;
+  const a = tr.fade === null ? 0 : Math.min(1, (now - tr.fade) / FADE_MS);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.globalAlpha = 1 - a;
+  drawSkeleton(ctx, lastSkel, cam, tf, colors);
+  if (a === 0) drawScale(ctx, tf.sc, scaleOpts(), colors);
+  if (a > 0 && scene?.fitted) { ctx.globalAlpha = a; drawScene(ctx, scene, motion, colors, scaleOpts()); }
+  ctx.globalAlpha = 1;
+  if (a >= 1) { tr = null; paint(); if (motion.active()) wake(); return; }
+  requestAnimationFrame(stepTransition);
 }
 
 let last = 0, running = false;
@@ -141,20 +183,11 @@ cv.addEventListener("pointermove", e => {
 const endPress = () => {
   if (!press) return;
   if (press.dragging) motion.release();
-  else motion.shake(press.hit.v, press.hit.x, press.hit.y);
   press = null; cv.style.cursor = "grab";
   dismissHint(); wake();
 };
 cv.addEventListener("pointerup", endPress);
 cv.addEventListener("pointercancel", () => { if (press && press.dragging) motion.release(); press = null; wake(); });
-cv.addEventListener("keydown", e => {
-  if ((e.key === "Enter" || e.key === " ") && scene) {
-    e.preventDefault();
-    const it = scene.layout.items[0], b = scene.views[it.v].bb;
-    motion.shake(it.v, (b[0] + b[2]) / 2, b[1] + (b[3] - b[1]) * 0.7);
-    dismissHint(); wake();
-  }
-});
 function dismissHint() { $("hint").classList.add("gone"); }
 
 /* ---------- controles ---------- */
@@ -187,7 +220,9 @@ function syncInputs() {
 function updateFicha() {
   const S = SPECIES[state.species], v = state.values;
   $("f_nombre").textContent = $("tipo").selectedOptions[0].textContent.replace(/\s*\(.*\)$/, "");
-  $("f_vista").textContent = {alzado: "Alzado", planta: "Planta", iso: "Isométrica", tres: "Las tres vistas"}[state.view];
+  const rot = state.values.isoRot || 0, isoShown = state.view === "iso" || state.view === "tres";
+  $("f_vista").textContent = {alzado: "Alzado", planta: "Planta", iso: "Isométrica", tres: "Las tres vistas"}[state.view] + (isoShown && rot ? ` · giro ${rot}°` : "");
+  $("isoRot").hidden = !isoShown;
   const what = S.mode === "roca" ? "de largo" : S.shape === "seto" ? "de largo" : S.mode === "hiedra" ? "de ancho" : "de copa";
   const grove = GROVE.has(state.species) && v.tallos > 1 ? `, ${v.tallos} ejemplares` : "";
   $("f_medidas").textContent = `${fmtNum(v.H)} m de alto, ${fmtNum(v.W)} m ${what}${grove}`;
@@ -200,8 +235,8 @@ function applySpecies() {
   $("r_hint").textContent = "Tipo: " + S.rtxt;
   const est = S.caduca ? state.values.estacion : "verano";
   document.querySelectorAll("#estSeg button").forEach(b => {
-    b.disabled = !S.caduca && b.dataset.s !== "verano";
-    b.setAttribute("aria-checked", String(est === b.dataset.s));
+    b.disabled = !S.caduca;
+    b.setAttribute("aria-checked", String(!!S.caduca && est === b.dataset.s));
   });
   $("estSeg").title = S.caduca ? "" : "Especie de hoja perenne: mantiene las hojas todo el año.";
   const sp = state.species, m = S.mode, masas = ["masas", "olivo", "cipres", "arbusto", "conifera"].includes(m);
@@ -252,11 +287,33 @@ document.querySelectorAll("#estSeg button").forEach(b => b.addEventListener("cli
 }));
 
 document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
-  state.view = b.dataset.v;
+  const prev = state.view, next = b.dataset.v;
+  if (prev === next) return;
+  state.view = next;
+  if (prev !== "tres" && next !== "tres") {
+    const from = cameraFor(prev, state.values.isoRot), to = cameraFor(next, state.values.isoRot);
+    // gira por el camino más corto
+    const d = Math.atan2(Math.sin(to.az - from.az), Math.cos(to.az - from.az));
+    startTransition(from, {az: from.az + d, el: to.el});
+  }
   document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", String(x === b)));
   updateFicha();
   requestDraw();
 }));
+
+// Giro de la isométrica: cuatro vistas del mismo ejemplar, de 90° en 90°.
+function rotateIso(step) {
+  const old = state.values.isoRot || 0, next = (old + step + 360) % 360;
+  state.values.isoRot = next;
+  if (state.view === "iso") {
+    const from = cameraFor("iso", old);
+    startTransition(from, {az: from.az + step * Math.PI / 180, el: from.el});
+  }
+  updateFicha();
+  requestDraw();
+}
+$("isoIzq").addEventListener("click", () => rotateIso(-90));
+$("isoDer").addEventListener("click", () => rotateIso(90));
 
 const setSeed = s => { state.seed = Math.max(1, Math.min(99999, Math.round(s) || 1)); $("semilla").value = state.seed; requestDraw(); };
 $("semilla").addEventListener("change", e => setSeed(+e.target.value));
@@ -384,11 +441,25 @@ document.querySelectorAll(".themes button").forEach(b => b.addEventListener("cli
 /* ---------- página de inicio ---------- */
 // #generador abre la herramienta; cualquier otra dirección muestra la portada.
 const landing = createLanding($("dotsBack"), $("dotsFront"));
+let routed = false;
 function route() {
-  const inApp = location.hash === "#generador";
-  $("inicio").hidden = inApp;
-  document.querySelector(".app").inert = !inApp;
-  if (inApp) { landing.stop(); setTimeout(resize, 30); } else landing.start();
+  const inApp = location.hash === "#generador", land = $("inicio"), app = document.querySelector(".app");
+  app.inert = !inApp;
+  const slide = routed && !reduceMotion.matches && land.hidden !== inApp;
+  routed = true;
+  const opts = {duration: 1000, easing: "cubic-bezier(.65, 0, .25, 1)", fill: "forwards"};
+  if (inApp) {
+    setTimeout(resize, 30);
+    if (!slide) { land.hidden = true; landing.stop(); return; }
+    const a = land.animate([{transform: "translateY(0)"}, {transform: "translateY(-100%)"}], opts);
+    app.animate([{transform: "translateY(100%)"}, {transform: "translateY(0)"}], {...opts, fill: "none"});
+    a.onfinish = () => { land.hidden = true; a.cancel(); landing.stop(); };
+  } else {
+    land.hidden = false; landing.start();
+    if (!slide) return;
+    land.animate([{transform: "translateY(-100%)"}, {transform: "translateY(0)"}], {...opts, fill: "none"});
+    app.animate([{transform: "translateY(0)"}, {transform: "translateY(100%)"}], {...opts, fill: "none"});
+  }
 }
 addEventListener("hashchange", route);
 

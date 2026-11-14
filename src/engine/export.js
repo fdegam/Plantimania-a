@@ -1,6 +1,6 @@
 // Exportación a DXF (AutoCAD) y SVG (Illustrator).
 import {earclip,dpLoop,bridge,layerOf,weightOf} from "./draw.js";
-function blockName(p,v){const t=((p.species||p.tipo)+(p.estacion&&p.estacion!=="verano"?"_"+p.estacion.slice(0,3):"")).toUpperCase().replace(/[^A-Z0-9_]/g,"");const vv={alzado:"AL",planta:"PL",iso:"ISO","3V":"3V"}[v];return ("VEG_"+vv+"_"+t+"_"+Math.round(p.H*100)+"CM_"+p.seed).replace(/[^A-Za-z0-9_\-$]/g,"_").slice(0,31);}
+function blockName(p,v){const t=((p.species||p.tipo)+(p.estacion&&p.estacion!=="verano"?"_"+p.estacion.slice(0,3):"")).toUpperCase().replace(/[^A-Z0-9_]/g,"");const vv={alzado:"AL",planta:"PL",iso:"ISO"+(p.isoRot?p.isoRot:""),"3V":"3V"}[v];return ("VEG_"+vv+"_"+t+"_"+Math.round(p.H*100)+"CM_"+p.seed).replace(/[^A-Za-z0-9_\-$]/g,"_").slice(0,31);}
 function makeDXF(p,vs,views){
   const o=[];const g=(c,v)=>o.push(c,v);
   g(0,"SECTION");g(2,"HEADER");g(9,"$ACADVER");g(1,"AC1009");g(9,"$INSBASE");g(10,0);g(20,0);g(30,0);g(0,"ENDSEC");

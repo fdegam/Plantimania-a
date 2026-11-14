@@ -4,12 +4,15 @@ import {v3,seasonModel} from "./model.js";
 import {genLitter} from "./litter.js";
 /* ---------- proyecciones ---------- */
 const ALPHA=Math.asin(Math.tan(Math.PI/6)); // 35.264°
-const CA=Math.cos(ALPHA), SA=Math.sin(ALPHA), R2=Math.SQRT1_2;
+const CA=Math.cos(ALPHA), SA=Math.sin(ALPHA);
+// Acimut de la isométrica: 45° más el giro elegido (0, 90, 180 o 270). Lo fija drawView.
+let ISO_C=Math.SQRT1_2, ISO_S=Math.SQRT1_2;
+function setIsoRotation(deg){const a=(45+(deg||0))*Math.PI/180;ISO_C=Math.cos(a);ISO_S=Math.sin(a);}
 function proj(v,q){
   const [x,y,z]=q;
   if(v==="alzado") return {s:[x,y],d:z};
   if(v==="planta") return {s:[x,-z],d:y};
-  const x1=(x+z)*R2, z1=(-x+z)*R2; // giro 45°
+  const x1=x*ISO_C+z*ISO_S, z1=-x*ISO_S+z*ISO_C;
   return {s:[x1,y*CA-z1*SA],d:z1*CA+y*SA};
 }
 function clumpRadii(v,c){
@@ -221,6 +224,7 @@ function earclip(pts){
 
 /* ---------- dibujo de una vista ---------- */
 function drawView(model,p,v){
+  setIsoRotation(p.isoRot);
   model=seasonModel(model,p);
   const items=[];
   const C="VEG_CONTORNO",D="VEG_DETALLE";

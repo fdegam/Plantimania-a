@@ -3,7 +3,7 @@ import {SPECIES, GROVE} from "./engine/species.js";
 
 // Ajustes de dibujo y exportación que no dependen de la especie.
 export const DEFAULT_SETTINGS = {
-  estacion: "verano",
+  estacion: "primavera",
   real: 0.75, sombra: 0.7,
   relleno: true, simple: false,
   sombraP: false, sdir: 45, salt: 45, sdist: 2,
@@ -11,6 +11,7 @@ export const DEFAULT_SETTINGS = {
   suelo: true,
   perim: true, gp: 0.6, gc: 0.3, gr: 0.25, gd: 0.13,
   escala: 100, dxfw: true, tres: false,
+  isoRot: 0, // giro de la isométrica en grados (0, 90, 180, 270)
   simp: 0, // simplificación del perímetro exterior (0 = detalle completo para CAD)
 };
 

@@ -14,9 +14,9 @@
   --beige-08: rgba(239, 231, 212, .08);
   --beige-30: rgba(239, 231, 212, .3);
   /* colores del dibujo en pantalla (la exportación DXF/SVG no cambia) */
-  --draw-ink: #f1e9d6;
-  --draw-fill: #567439;
-  --draw-shadow: #33481f;
+  --draw-ink: #1d3114;
+  --draw-fill: #f5efe0;
+  --draw-shadow: #2c401c;
   /* piezas que cambian con el tema */
   --bg: #47622f url("./assets/papel-verde.jpg");
   --land-title: #c9b6f4;
@@ -150,7 +150,6 @@ svg { flex: none; }
   display: grid; place-items: center; align-content: center; gap: 0;
   overflow: hidden;
   background: var(--bg);
-  transition: opacity .55s ease, visibility .55s;
 }
 .landing[hidden] { display: grid; opacity: 0; visibility: hidden; pointer-events: none; }
 .landing .dots { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
@@ -619,3 +618,9 @@ input[type=range]:focus-visible { outline: 1.5px dashed var(--stamp); outline-of
 @media (max-width: 860px) {
   .themes { top: 10px; left: 10px; right: auto; bottom: auto; }
 }
+
+/* ---------- giro de la isométrica ---------- */
+.iso-rot { position: absolute; left: 28px; top: 150px; z-index: 2; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.iso-rot[hidden] { display: none; }
+.iso-rot .label { padding-left: 0; }
+@media (max-width: 860px) { .iso-rot { left: auto; right: 18px; top: 16px; } }

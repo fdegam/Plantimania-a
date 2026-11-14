@@ -1,4 +1,4 @@
-// Movimiento de la planta: viento, sacudidas, arrastre de ramas y hojas que caen.
+// Movimiento de la planta: viento, arrastre de ramas y hojas que caen.
 // Todo se aplica como una deformación 2D del dibujo ya calculado, en metros,
 // anclada al pie de la planta (el tronco no se mueve en la base).
 
@@ -11,7 +11,6 @@ export class Motion {
   constructor() {
     this.t = 0;
     this.wind = {on: false, mode: "brisa", dir: 1};
-    this.shakes = [];
     this.drag = null;
     this.leaves = [];
     this.leafRate = 0;      // hojas por sacudida según especie y estación
@@ -29,7 +28,7 @@ export class Motion {
   }
 
   active() {
-    return this.wind.on || this.shakes.length > 0 || this.drag !== null || this.leaves.length > 0;
+    return this.wind.on || this.drag !== null || this.leaves.length > 0;
   }
 
   // Peso de anclaje: 0 en el suelo o en el centro del tronco (planta), 1 en lo más alto o en el borde de la copa.
@@ -56,15 +55,6 @@ export class Motion {
       dy += plan ? fl * 0.6 * Math.cos(ph) : -Math.abs(bend) * 0.12 * w;
     }
 
-    for (const s of this.shakes) {
-      const ddx = x - s.x, ddy = y - s.y, d2 = ddx * ddx + ddy * ddy;
-      const g = Math.exp(-d2 / (s.sigma * s.sigma));
-      if (g < 0.01) continue;
-      const d = Math.sqrt(d2) || 1;
-      const ux = d2 > 1e-9 ? ddx / d : 0, uy = d2 > 1e-9 ? ddy / d : 1;
-      const a = s.a * g * w + s.a2 * g * w * Math.sin(s.age * 26 + (x + y) / H * 14);
-      dx += ux * a; dy += uy * a * 0.7;
-    }
 
     const dr = this.drag;
     if (dr) {
@@ -75,14 +65,6 @@ export class Motion {
     }
     out[0] = dx; out[1] = dy;
     return out;
-  }
-
-  shake(view, x, y) {
-    const f = this.frames[view]; if (!f) return;
-    const H = f.view === "planta" ? f.radius : f.top;
-    if (this.shakes.length > 4) this.shakes.shift();
-    this.shakes.push({x, y, sigma: f.size * 0.42, age: 0, a: 0, a2: 0, A: H * 0.045 * this.stiff});
-    if (f.view !== "planta") this.spawnLeaves(view, x, y, this.leafRate);
   }
 
   grab(view, x, y) {
@@ -117,13 +99,6 @@ export class Motion {
     dt = Math.min(dt, 1 / 20);
     this.t += dt;
 
-    for (const s of this.shakes) {
-      s.age += dt;
-      const env = Math.exp(-3.4 * s.age);
-      s.a = s.A * env * Math.sin(11 * s.age);
-      s.a2 = s.A * 0.18 * env;
-    }
-    this.shakes = this.shakes.filter(s => s.age < 2.2);
 
     const dr = this.drag;
     if (dr) {

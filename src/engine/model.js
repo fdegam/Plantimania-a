@@ -413,7 +413,9 @@ function genWinter(m,p){
 }
 function seasonModel(m,p){
   const S=SPECIES[p.species];
-  if(!S||!S.caduca||p.estacion==="verano"||p.estacion==="primavera")return m;
+  if(!S||!S.caduca||p.estacion==="primavera")return m;
+  // verano: algo menos frondoso que en primavera (se quita ~1 de cada 6 masas y hojas)
+  if(p.estacion==="verano")return Object.assign({},m,{clumps:m.clumps.filter(c=>mulberry(c.seed+51)()<0.83),leaves:m.leaves.filter((l,i)=>mulberry(i*11+29)()<0.85)});
   if(!m.winter)m.winter=genWinter(m,p);
   const f=p.estacion==="otono"?0.22:0;
   return Object.assign({},m,{clumps:m.clumps.filter(c=>mulberry(c.seed+99)()<f),leaves:m.leaves.filter((l,i)=>mulberry(i*7+13)()<f),

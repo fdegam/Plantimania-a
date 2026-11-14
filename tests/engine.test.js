@@ -83,3 +83,25 @@ describe("otoño en planta e isométrica e hiedra", () => {
     expect(V.lines.filter(l => l.layer === "VEG_PERIMETRO").length).toBeGreaterThan(20);
   });
 });
+
+describe("estaciones y giro de la isométrica", () => {
+  it("en verano las caducas son algo menos frondosas que en primavera", () => {
+    const pri = buildParams("platano", {estacion: "primavera"}, 9), ver = buildParams("platano", {estacion: "verano"}, 9);
+    const n = p => drawView(gen(p), p, "alzado").lines.length;
+    expect(n(ver)).toBeLessThan(n(pri));
+  });
+
+  it("las perennes no cambian con la estación", () => {
+    const pri = buildParams("olivo", {estacion: "primavera"}, 9), ver = buildParams("olivo", {estacion: "verano"}, 9);
+    expect(drawView(gen(ver), ver, "alzado").lines.length).toBe(drawView(gen(pri), pri, "alzado").lines.length);
+  });
+
+  it("la isométrica se puede girar y el bloque lleva el giro en el nombre", async () => {
+    const {blockName} = await import("../src/engine/export.js");
+    const a = buildParams("olivo", {isoRot: 0}, 9), b = buildParams("olivo", {isoRot: 90}, 9);
+    const m = gen(a);
+    expect(drawView(m, b, "iso").bb).not.toEqual(drawView(m, a, "iso").bb);
+    expect(blockName(b, "iso")).toContain("ISO90");
+    expect(blockName(a, "iso")).toContain("_ISO_");
+  });
+});
