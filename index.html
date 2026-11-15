@@ -123,7 +123,6 @@
   <main class="sheet" id="stage">
     <canvas id="cv" role="img" aria-label="Dibujo de la planta. Arrastra una rama para doblarla."></canvas>
     <div class="ficha" aria-live="polite">
-      <p class="kicker" id="f_vista">Alzado</p>
       <h2 id="f_nombre">Olivo</h2>
       <p class="medidas" id="f_medidas"></p>
       <p class="busy" id="busy" hidden>Dibujando</p>
@@ -189,6 +188,7 @@
         <span class="label" id="l_viento">Viento</span>
         <div class="row-controls">
           <button class="switch" role="switch" aria-checked="false" id="windOn" aria-labelledby="l_viento"><span></span></button>
+          <div class="wind-opts" hidden>
           <div class="seg" role="radiogroup" aria-label="Fuerza del viento" id="windMode">
             <button role="radio" data-m="brisa" aria-checked="true">Brisa</button>
             <button role="radio" data-m="temporal" aria-checked="false">Temporal</button>
@@ -196,6 +196,7 @@
           <div class="seg icons" role="radiogroup" aria-label="Dirección del viento" id="windDir">
             <button role="radio" data-d="-1" aria-checked="false" aria-label="Hacia la izquierda"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16 10H4m0 0 5-5m-5 5 5 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             <button role="radio" data-d="1" aria-checked="true" aria-label="Hacia la derecha"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12m0 0-5-5m5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
           </div>
         </div>
       </div>

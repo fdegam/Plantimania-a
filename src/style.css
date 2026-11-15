@@ -1,6 +1,7 @@
 /* Plantimanía: papel verde afieltrado con texto beige, títulos lila,
    cabecera con vegetación a puntillismo y lámina de cristal líquido. */
 :root {
+  --shadow-ink: 8, 16, 4;
   --paper: #47622f;        /* fondo: papel verde */
   --paper-2: #3d5428;      /* paneles: verde algo más hondo */
   --paper-hi: #2c3f1d;     /* verde oscuro: texto sobre botones beige y campos */
@@ -53,6 +54,7 @@
 
 /* ---------- tema lila: papel lila con texto verde y detalles en beige ---------- */
 :root[data-theme="lila"] {
+  --shadow-ink: 46, 30, 92;
   --bg: #d2a8fc url("./assets/papel-lila.jpg");
   --paper: #d2a8fc;
   --paper-2: #c497f3;
@@ -89,6 +91,7 @@
 
 /* ---------- tema beige: el papel de algodón del principio ---------- */
 :root[data-theme="beige"] {
+  --shadow-ink: 70, 55, 25;
   --bg: var(--grain), #efe7d4 var(--fibre);
   --paper: #efe7d4;
   --paper-2: #e7ddc6;
@@ -107,7 +110,7 @@
   --draw-shadow: #9f998b;
   --deboss: inset 1px 1px 2px rgba(120, 100, 60, .38), inset -1px -1px 1px rgba(255, 252, 240, .9);
   --emboss: 1px 1px 1px rgba(120, 100, 60, .35), -1px -1px 1px rgba(255, 252, 240, .95);
-  --glass-drop: 0 10px 26px -14px rgba(70, 55, 25, .4);
+  --glass-drop: 0 10px 26px -14px rgba(var(--shadow-ink), .4);
   --land-title: #69568d;
   --land-text: #24432c;
   --dot-dark: #4f5d2a;
@@ -349,7 +352,7 @@ canvas#cv:focus-visible { outline: none; }
   padding: 12px 6px 14px;
   background: var(--paper-2); background-image: var(--grain);
   border-radius: 6px;
-  box-shadow: var(--emboss), 0 10px 28px -12px rgba(70, 55, 25, .35);
+  box-shadow: var(--emboss), 0 10px 28px -12px rgba(var(--shadow-ink), .35);
 }
 .group { display: flex; flex-direction: column; gap: 8px; padding: 0 16px; min-width: 0; }
 .group + .group { border-left: 1px dashed var(--beige-30); }
@@ -409,7 +412,7 @@ input[type=number] { width: 84px; font-family: var(--font-ui); font-size: 14px; 
   display: flex; flex-direction: column; gap: 12px;
   width: 320px; padding: 16px;
   background: var(--paper-2); background-image: var(--grain);
-  border-radius: 6px; box-shadow: var(--emboss), 0 16px 40px -14px rgba(70, 55, 25, .4);
+  border-radius: 6px; box-shadow: var(--emboss), 0 16px 40px -14px rgba(var(--shadow-ink), .4);
 }
 .popover[hidden] { display: none; }
 .popover .seg { display: flex; }
@@ -423,7 +426,7 @@ input[type=number] { width: 84px; font-family: var(--font-ui); font-size: 14px; 
   width: min(540px, calc(100% - 24px)); padding: 0 22px 22px;
   border: 0; border-radius: 8px; color: var(--ink);
   background: var(--paper); background-image: var(--grain), var(--fibre);
-  box-shadow: var(--emboss), 0 24px 60px -20px rgba(70, 55, 25, .5);
+  box-shadow: var(--emboss), 0 24px 60px -20px rgba(var(--shadow-ink), .5);
 }
 .suggest::backdrop { background: rgba(36, 67, 44, .22); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
 .suggest form { display: flex; flex-direction: column; gap: 14px; }
@@ -460,7 +463,7 @@ input[type=number] { width: 84px; font-family: var(--font-ui); font-size: 14px; 
   padding: 0 14px 22px 18px;
   background-color: var(--panel-green); background-image: var(--grain), var(--fibre);
   border-radius: 8px;
-  box-shadow: var(--emboss), -18px 0 40px -20px rgba(70, 55, 25, .45);
+  box-shadow: var(--emboss), -18px 0 40px -20px rgba(var(--shadow-ink), .45);
   counter-reset: card;
   transform: translateX(calc(100% + 24px));
   transition: transform .22s cubic-bezier(.2, .8, .2, 1);
@@ -716,4 +719,14 @@ a.glass { text-decoration: none; }
 @media (max-width: 860px) {
   .seg.icons button { min-width: 44px; }
   .landing-byline .firma, .byline .firma { padding: 18px 0; margin: -18px 0; }
+}
+
+/* ---------- layout: cabecera compacta dentro del generador (la portada conserva el cartel) ---------- */
+.in-app .hero { height: auto; padding: 14px 24px 0; }
+.in-app .hero .tags { display: none; }
+.in-app .hero .title { font-size: clamp(30px, 3.6vw, 48px); margin-top: 0; }
+.in-app .hero .byline { font-size: 10px; margin-top: .35em; }
+.in-app .bar { padding-top: 8px; }
+@media (max-width: 860px) {
+  .in-app .hero { padding-top: 44px; }   /* franja propia para los puntos de tema, sin tapar el título */
 }

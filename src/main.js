@@ -231,12 +231,13 @@ function updateFicha() {
   const S = SPECIES[state.species], v = state.values;
   $("f_nombre").textContent = $("tipo").selectedOptions[0].textContent.replace(/\s*\(.*\)$/, "");
   const rot = state.values.isoRot || 0, isoShown = state.view === "iso" || state.view === "tres";
-  $("f_vista").textContent = {alzado: "Alzado", planta: "Planta", iso: "Isométrica", tres: "Las tres vistas"}[state.view] + (isoShown && rot ? ` · giro ${rot}°` : "");
   $("isoRot").hidden = !isoShown;
   const what = S.mode === "roca" ? "de largo" : S.shape === "seto" ? "de largo" : S.mode === "hiedra" ? "de ancho" : "de copa";
   const grove = GROVE.has(state.species) && v.tallos > 1 ? `, ${v.tallos} ejemplares` : "";
   const pot = v.maceta ? `, en maceta ${v.potShape} de ${fmtNum(v.potD, 2)} × ${fmtNum(v.potH, 2)} m` : "";
-  $("f_medidas").textContent = `${fmtNum(v.H)} m de alto, ${fmtNum(v.W)} m ${what}${grove}${pot}`;
+  const view = {alzado: "Alzado", planta: "Planta", iso: "Isométrica", tres: "Las tres vistas"}[state.view];
+  const rotTxt = (state.view === "iso" || state.view === "tres") && rot ? ` · giro ${rot}°` : "";
+  $("f_medidas").textContent = `${view}${rotTxt} · ${fmtNum(v.H)} m de alto, ${fmtNum(v.W)} m ${what}${grove}${pot}`;
 }
 
 function applySpecies() {
@@ -362,6 +363,7 @@ document.addEventListener("keydown", e => {
 /* viento */
 function setWind(on) {
   motion.wind.on = on;
+  for (const el of document.querySelectorAll(".wind-opts")) el.hidden = !on;
   $("windOn").setAttribute("aria-checked", String(on));
   document.querySelector(".dock").classList.toggle("windy", on);
   if (on) wake();
@@ -489,6 +491,7 @@ function route() {
   if (from === to) return;
   current = to;
   pageEl("app").inert = to !== "app";
+  document.documentElement.classList.toggle("in-app", to === "app");
   const show = (n, on) => { if (n !== "app") pageEl(n).hidden = !on; };
   if (to === "inicio") landing.start();
   if (to === "app") setTimeout(resize, 30);
@@ -506,6 +509,10 @@ function route() {
   out.onfinish = () => { if (current !== from) show(from, false); out.cancel(); if (from === "inicio" && current !== "inicio") landing.stop(); };
 }
 addEventListener("hashchange", route);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) landing.stop();
+  else if (current === "inicio" && !reduceMotion.matches) landing.start();
+});
 
 /* ---------- arranque ---------- */
 new ResizeObserver(resize).observe($("stage"));
@@ -520,4 +527,3 @@ requestDraw();
 { let t = "verde"; try { t = localStorage.getItem("plantimania-tema") || t; } catch {} setTheme(t, false); }
 route();
 initLiquidGlass(".start, .tabs button, .glass, .sheet, .meta, .card");
-if (!reduceMotion.matches) setTimeout(() => setWind(true), 400);
