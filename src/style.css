@@ -7,10 +7,10 @@
   --paper-lo: #2a3b1b;
   --ink: #efe7d4;          /* el texto que era verde pasa a beige */
   --ink-2: #ddd3b8;
-  --stamp: #cdb9f6;        /* lila de sello, aclarado para leerse sobre verde */
+  --stamp: #dbcdf9;        /* lila de sello, aclarado para leerse sobre verde */
   --lilac: #c9b6f4;
   --lilac-2: #b39ced;
-  --muted: #bcc3a3;
+  --muted: #d1d6c0;
   --beige-08: rgba(239, 231, 212, .08);
   --beige-30: rgba(239, 231, 212, .3);
   /* colores del dibujo en pantalla (la exportación DXF/SVG no cambia) */
@@ -19,7 +19,7 @@
   --draw-shadow: #2c401c;
   /* piezas que cambian con el tema */
   --bg: #47622f url("./assets/papel-verde.jpg");
-  --land-title: #c9b6f4;
+  --land-title: #dacdf8;
   --land-text: #f6f2ff;
   --dot-dark: #33491c;
   --dot-light: #a3bd70;
@@ -60,10 +60,10 @@
   --paper-lo: #a983d6;
   --ink: #24432c;
   --ink-2: #3d5c43;
-  --stamp: #2f5a35;
+  --stamp: #244529;
   --lilac: #24432c;
   --lilac-2: #3d5c43;
-  --muted: #4f4870;
+  --muted: #3f3a5a;
   --beige-08: rgba(36, 67, 44, .08);
   --beige-30: rgba(36, 67, 44, .35);
   --draw-ink: #24432c;
@@ -96,10 +96,10 @@
   --paper-lo: #cbbd9c;
   --ink: #24432c;
   --ink-2: #3d5c43;
-  --stamp: #7d5cc8;
+  --stamp: #6c4fac;
   --lilac: #a98be3;
   --lilac-2: #8f6fd6;
-  --muted: #6f6a57;
+  --muted: #65604f;
   --beige-08: rgba(36, 67, 44, .06);
   --beige-30: rgba(36, 67, 44, .35);
   --draw-ink: #24432c;
@@ -108,7 +108,7 @@
   --deboss: inset 1px 1px 2px rgba(120, 100, 60, .38), inset -1px -1px 1px rgba(255, 252, 240, .9);
   --emboss: 1px 1px 1px rgba(120, 100, 60, .35), -1px -1px 1px rgba(255, 252, 240, .95);
   --glass-drop: 0 10px 26px -14px rgba(70, 55, 25, .4);
-  --land-title: #a98be3;
+  --land-title: #69568d;
   --land-text: #24432c;
   --dot-dark: #4f5d2a;
   --dot-light: #a9b27c;
