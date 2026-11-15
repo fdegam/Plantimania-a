@@ -105,3 +105,33 @@ describe("estaciones y giro de la isométrica", () => {
     expect(blockName(a, "iso")).toContain("_ISO_");
   });
 });
+
+describe("plantas en maceta", () => {
+  for (const shape of ["redonda", "cuadrada"]) {
+    it(`maceta ${shape}: todas las especies se dibujan y exportan`, () => {
+      for (const id of Object.keys(SPECIES)) {
+        const p = buildParams(id, {maceta: true, potShape: shape, potD: 0.6, potH: 0.5, H: 1.5, W: 1.2, sombraP: true}, 3);
+        const model = gen(p), views = {};
+        for (const v of VIEWS) {
+          views[v] = drawView(model, p, v);
+          expect(views[v].bb.every(Number.isFinite)).toBe(true);
+        }
+        expect(makeDXF(p, VIEWS, views)).not.toMatch(/NaN|undefined/);
+        expect(makeSVG(p, VIEWS, views)).not.toMatch(/NaN|undefined/);
+      }
+    });
+  }
+
+  it("la planta sube a la altura de la maceta y el pie de la maceta queda en el suelo", () => {
+    const sin = buildParams("olivo", {H: 2, W: 1.6}, 5), con = buildParams("olivo", {H: 2, W: 1.6, maceta: true, potH: 0.6}, 5);
+    const a = drawView(gen(sin), sin, "alzado").bb, b = drawView(gen(con), con, "alzado").bb;
+    expect(b[3] - a[3]).toBeGreaterThan(0.5);
+    expect(b[1]).toBeLessThan(0.05);
+  });
+
+  it("en maceta no hay raíces ni hojarasca", () => {
+    const p = buildParams("platano", {maceta: true, raices: true, estacion: "otono", H: 2, W: 1.5}, 5);
+    expect(drawView(gen(p), p, "alzado").lines.some(l => l.layer === "VEG_RAICES")).toBe(false);
+    expect(drawView(gen(p), p, "planta").lines.some(l => l.litter)).toBe(false);
+  });
+});

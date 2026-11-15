@@ -4,6 +4,7 @@ import {gen, seasonModel} from "./engine/model.js";
 import {drawView} from "./engine/draw.js";
 import {makeDXF, makeSVG, blockName} from "./engine/export.js";
 import {simplifyView} from "./engine/simplify.js";
+import {potLift, potGeometry, potRing} from "./engine/pot.js";
 
 const LAYER_CODES = ["VEG_PERIMETRO", "VEG_CONTORNO", "VEG_DETALLE", "VEG_RAICES"];
 
@@ -34,19 +35,20 @@ function ensure(p, list) {
 // animar el cambio de vista girando la cámara mientras se calcula el dibujo final.
 let skeletonKey = null, skeleton = null;
 function buildSkeleton(p) {
-  const key = cacheKey + "|" + p.estacion;
+  const key = cacheKey + "|" + p.estacion + "|" + (p.maceta ? [p.potShape, p.potD, p.potH] : "");
   if (key === skeletonKey) return skeleton;
-  const m = seasonModel(model, p);
+  const m = seasonModel(model, p), L = potLift(p);
   const clumps = new Float32Array(m.clumps.length * 5);
-  m.clumps.forEach((c, i) => clumps.set([c.x, c.y, c.z, c.r, c.sy], i * 5));
+  m.clumps.forEach((c, i) => clumps.set([c.x, c.y + L, c.z, c.r, c.sy], i * 5));
   const lines = [], widths = [];
-  const every = (pts, k) => pts.filter((_, i) => i % k === 0 || i === pts.length - 1);
+  // en maceta, la planta sube hasta la tierra de la maceta
+  const every = (pts, k) => pts.filter((_, i) => i % k === 0 || i === pts.length - 1).map(q => [q[0], q[1] + L, q[2]]);
   for (const L of m.limbs) { lines.push(every(L.pts, 2)); widths.push(L.w0, L.w1); }
   const twigs = (m.twigs || []).map(t => every(t, 2));
   const leafStride = Math.max(1, Math.ceil((m.leaves || []).length / 1400));
   const leaves = (m.leaves || []).filter((_, i) => i % leafStride === 0).map(l => every(l.outline, Math.max(1, Math.floor(l.outline.length / 8))));
   const rockTris = [];
-  for (const rk of m.rocks || []) for (const f of rk.faces) rockTris.push(f.v.map(k => rk.P[k]));
+  for (const rk of m.rocks || []) for (const f of rk.faces) rockTris.push(f.v.map(k => [rk.P[k][0], rk.P[k][1] + L, rk.P[k][2]]));
   const flat = rings => {
     let n = 0; for (const r of rings) n += r.length;
     const xyz = new Float32Array(n * 3), start = new Uint32Array(rings.length + 1);
@@ -56,7 +58,15 @@ function buildSkeleton(p) {
     return {xyz, start};
   };
   skeletonKey = key;
-  skeleton = {clumps, limbs: {...flat(lines), w: Float32Array.from(widths)}, twigs: flat(twigs), leaves: flat(leaves), rocks: flat(rockTris), H: m.H, W: m.W};
+  let pot = null;
+  if (p.maceta) {
+    const G = potGeometry(p), up = pts => pts.map(q => [q[0], q[1] + L, q[2]]);
+    pot = {
+      body: flat([up(potRing(G.shape, G.rBody, G.yRim, 32).concat(potRing(G.shape, G.rBot, G.yBot, 32)))]).xyz,
+      rim: flat([up(potRing(G.shape, G.R, G.yTop, 32).concat(potRing(G.shape, G.R, G.yRim, 32)))]).xyz,
+    };
+  }
+  skeleton = {clumps, limbs: {...flat(lines), w: Float32Array.from(widths)}, twigs: flat(twigs), leaves: flat(leaves), rocks: flat(rockTris), pot, H: m.H, W: m.W};
   return skeleton;
 }
 
@@ -89,7 +99,7 @@ function pack(v) {
   const still = packGroup(v.lines.filter(isLitter), v.white.filter(isLitter), v.shadow.filter(isLitter));
   const crown = packRings(v.lines.filter(l => l.layer === "VEG_PERIMETRO" && l.outer).map(l => l.pts));
   return {
-    bb: v.bb, ...live.group, still: still.group, crown,
+    bb: v.bb, ...live.group, still: still.group, crown, potTop: v.potTop || 0, potR: v.potR || 0,
     count: v.lines.length,
     transfer: [...live.transfer, ...still.transfer, crown.xy.buffer, crown.start.buffer],
   };

@@ -13,7 +13,7 @@ const fmtNum = (v, d = 1) => Number(v).toLocaleString("es-ES", {minimumFractionD
 /* ---------- estado ---------- */
 const state = {
   species: "platano",
-  seed: 128,
+  seed: 1 + Math.floor(Math.random() * 99998),   // cada vez que se abre, otra variante
   view: "alzado",
   values: {...DEFAULT_SETTINGS, ...speciesDefaults("platano")},
 };
@@ -63,7 +63,7 @@ function requestDraw(delay = 0) {
 function setScene(p, list, views, name) {
   scene = {p, views, layout: layoutScene(views, list)};
   motion.frames = {};
-  for (const v of list) { motion.setFrame(v, views[v].bb); motion.setCrown(v, views[v].crown); }
+  for (const v of list) { motion.setFrame(v, views[v].bb, v === "planta" ? views[v].potR * 1.05 : views[v].potTop); motion.setCrown(v, views[v].crown); }
   motion.leaves = motion.leaves.filter(l => views[l.view]);
   const S = SPECIES[p.species];
   motion.stiff = S.mode === "roca" ? 0.08 : S.mode === "hiedra" ? 0.45 : 1;
@@ -84,7 +84,8 @@ function dockInset() {
   const r = dock.getBoundingClientRect(), s = stage.getBoundingClientRect();
   const drawer = $("ajustes"), wide = innerWidth > 860;
   const right = wide && drawer.classList.contains("open") ? Math.max(0, s.right - (innerWidth - 12 - drawer.offsetWidth) + 16) : 0;
-  return {bottom: Math.max(0, s.bottom - r.top), right};
+  const ficha = document.querySelector(".ficha").getBoundingClientRect();
+  return {bottom: Math.max(0, s.bottom - r.top), right, top: Math.max(0, ficha.bottom - s.top)};
 }
 
 function resize() {
@@ -198,6 +199,7 @@ const FORMAT = {
   sdir: v => v + "° " + ["→", "↗", "↑", "↖", "←", "↙", "↓", "↘"][Math.round(v / 45) % 8], salt: v => v + "°", sdist: v => fmtNum(v) + " m",
   rg: v => "× " + fmtNum(v, 2), rp: v => "× " + fmtNum(v, 2),
   simp: v => v > 0 ? Math.round(v * 100) + " %" : "Nada",
+  potD: v => fmtNum(v, 2) + " m", potH: v => fmtNum(v, 2) + " m",
   gp: v => fmtNum(v, 2) + " mm", gc: v => fmtNum(v, 2) + " mm", gr: v => fmtNum(v, 2) + " mm", gd: v => fmtNum(v, 2) + " mm",
 };
 
@@ -212,6 +214,10 @@ function syncInputs() {
   const revit = state.values.simp > 0;
   document.querySelectorAll("#destSeg button").forEach(b => b.setAttribute("aria-checked", String((+b.dataset.simp > 0) === revit)));
   $("b_dxf").textContent = revit ? "Descargar DXF para Revit" : "Descargar DXF para AutoCAD";
+  const pot = !!state.values.maceta;
+  $("potOn").setAttribute("aria-checked", String(pot));
+  for (const id of ["potD", "potH"]) { $(id).disabled = !pot; $(id).closest(".range").classList.toggle("off", !pot); }
+  document.querySelector('[data-key="potShape"]').disabled = !pot;
   $("gp").disabled = !state.values.perim;
   $("gp").closest(".range").classList.toggle("off", !state.values.perim);
   updateFicha();
@@ -225,7 +231,8 @@ function updateFicha() {
   $("isoRot").hidden = !isoShown;
   const what = S.mode === "roca" ? "de largo" : S.shape === "seto" ? "de largo" : S.mode === "hiedra" ? "de ancho" : "de copa";
   const grove = GROVE.has(state.species) && v.tallos > 1 ? `, ${v.tallos} ejemplares` : "";
-  $("f_medidas").textContent = `${fmtNum(v.H)} m de alto, ${fmtNum(v.W)} m ${what}${grove}`;
+  const pot = v.maceta ? `, en maceta ${v.potShape} de ${fmtNum(v.potD, 2)} × ${fmtNum(v.potH, 2)} m` : "";
+  $("f_medidas").textContent = `${fmtNum(v.H)} m de alto, ${fmtNum(v.W)} m ${what}${grove}${pot}`;
 }
 
 function applySpecies() {
@@ -254,6 +261,7 @@ function applySpecies() {
 for (const el of inputs) {
   el.addEventListener("input", () => {
     const k = el.dataset.key;
+    if (k === "maceta") { setPot(el.checked); return; }
     state.values[k] = el.type === "checkbox" ? el.checked : (el.tagName === "SELECT" && !("num" in el.dataset) ? el.value : +el.value);
     syncInputs();
     if (["gp", "gc", "gd", "gr", "perim"].includes(k)) { if (scene) { scene.p = params(); paint(); } return; }
@@ -276,6 +284,21 @@ function showSimplification(p, stats) {
     ? `Perímetro exterior: ${n(before)} → ${n(after)} vértices, con una tolerancia de ${fmtNum(Math.max(...all.map(x => x.tol)) * 100)} cm.`
     : `Perímetro exterior con todo el detalle: ${n(before)} vértices. Para Revit, simplifícalo.`;
 }
+
+// Maceta: al activarla, si la planta es demasiado grande para una maceta, se reduce a un tamaño de maceta.
+function setPot(on) {
+  state.values.maceta = on;
+  if (on && state.values.H > 4) {
+    // tamaño de planta de maceta y una maceta proporcionada a ella
+    const k = 2.4 / state.values.H, v = state.values;
+    v.H = 2.4; v.W = Math.max(0.3, Math.min(1.8, Math.round(v.W * k * 10) / 10));
+    v.potD = Math.round(Math.min(1.2, Math.max(0.4, v.W * 0.45)) * 20) / 20;
+    v.potH = Math.round(v.potD * 0.85 * 20) / 20;
+  }
+  syncInputs(); requestDraw();
+}
+$("potOn").addEventListener("click", () => setPot(!state.values.maceta));
+$("b_potAjustes").addEventListener("click", () => { openDrawer(); const c = $("cardMaceta"); c.open = true; setTimeout(() => c.scrollIntoView({block: "start", behavior: reduceMotion.matches ? "auto" : "smooth"}), 250); });
 
 $("tipo").addEventListener("change", e => { state.species = e.target.value; motion.leaves = []; applySpecies(); requestDraw(); });
 
@@ -441,25 +464,32 @@ document.querySelectorAll(".themes button").forEach(b => b.addEventListener("cli
 /* ---------- página de inicio ---------- */
 // #generador abre la herramienta; cualquier otra dirección muestra la portada.
 const landing = createLanding($("dotsBack"), $("dotsFront"));
-let routed = false;
+// Tres páginas una debajo de otra: portada, «Qué es» y generador. Al ir hacia abajo la
+// página actual sube y la nueva entra por abajo; al volver, al revés.
+const PAGES = ["inicio", "sobre", "app"];
+const pageEl = n => n === "app" ? document.querySelector(".app") : $(n);
+let current = null;
 function route() {
-  const inApp = location.hash === "#generador", land = $("inicio"), app = document.querySelector(".app");
-  app.inert = !inApp;
-  const slide = routed && !reduceMotion.matches && land.hidden !== inApp;
-  routed = true;
-  const opts = {duration: 1000, easing: "cubic-bezier(.65, 0, .25, 1)", fill: "forwards"};
-  if (inApp) {
-    setTimeout(resize, 30);
-    if (!slide) { land.hidden = true; landing.stop(); return; }
-    const a = land.animate([{transform: "translateY(0)"}, {transform: "translateY(-100%)"}], opts);
-    app.animate([{transform: "translateY(100%)"}, {transform: "translateY(0)"}], {...opts, fill: "none"});
-    a.onfinish = () => { land.hidden = true; a.cancel(); landing.stop(); };
-  } else {
-    land.hidden = false; landing.start();
-    if (!slide) return;
-    land.animate([{transform: "translateY(-100%)"}, {transform: "translateY(0)"}], {...opts, fill: "none"});
-    app.animate([{transform: "translateY(0)"}, {transform: "translateY(100%)"}], {...opts, fill: "none"});
+  const to = location.hash === "#generador" ? "app" : location.hash === "#sobre" ? "sobre" : "inicio";
+  const from = current;
+  if (from === to) return;
+  current = to;
+  pageEl("app").inert = to !== "app";
+  const show = (n, on) => { if (n !== "app") pageEl(n).hidden = !on; };
+  if (to === "inicio") landing.start();
+  if (to === "app") setTimeout(resize, 30);
+  if (to === "sobre") $("sobre").scrollTop = 0;
+  if (!from || reduceMotion.matches) {
+    for (const n of ["inicio", "sobre"]) show(n, n === to);
+    if (to !== "inicio") landing.stop();
+    return;
   }
+  show(to, true);
+  const dir = PAGES.indexOf(to) > PAGES.indexOf(from) ? 1 : -1;
+  const opts = {duration: 1000, easing: "cubic-bezier(.65, 0, .25, 1)"};
+  const out = pageEl(from).animate([{transform: "translateY(0)"}, {transform: `translateY(${-100 * dir}%)`}], {...opts, fill: "forwards"});
+  pageEl(to).animate([{transform: `translateY(${100 * dir}%)`}, {transform: "translateY(0)"}], opts);
+  out.onfinish = () => { if (current !== from) show(from, false); out.cancel(); if (from === "inicio" && current !== "inicio") landing.stop(); };
 }
 addEventListener("hashchange", route);
 
@@ -470,6 +500,7 @@ let heroTimer = 0;
 new ResizeObserver(() => { clearTimeout(heroTimer); heroTimer = setTimeout(paintHero, 200); }).observe(document.querySelector(".hero"));
 document.fonts?.ready.then(() => { colors = readColors(document.documentElement); paint(); });
 $("tipo").value = state.species;
+$("semilla").value = state.seed;
 applySpecies();
 requestDraw();
 { let t = "verde"; try { t = localStorage.getItem("plantimania-tema") || t; } catch {} setTheme(t, false); }

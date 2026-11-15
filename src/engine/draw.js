@@ -2,14 +2,17 @@
 import {mulberry,U,N} from "./random.js";
 import {v3,seasonModel} from "./model.js";
 import {genLitter} from "./litter.js";
+import {potLift,potItems,potSolids,hull} from "./pot.js";
 /* ---------- proyecciones ---------- */
 const ALPHA=Math.asin(Math.tan(Math.PI/6)); // 35.264°
 const CA=Math.cos(ALPHA), SA=Math.sin(ALPHA);
 // Acimut de la isométrica: 45° más el giro elegido (0, 90, 180 o 270). Lo fija drawView.
 let ISO_C=Math.SQRT1_2, ISO_S=Math.SQRT1_2;
 function setIsoRotation(deg){const a=(45+(deg||0))*Math.PI/180;ISO_C=Math.cos(a);ISO_S=Math.sin(a);}
+// Elevación de la planta cuando va en maceta: la tierra queda a esta altura sobre el suelo.
+let POT_LIFT=0;
 function proj(v,q){
-  const [x,y,z]=q;
+  const x=q[0],y=q[1]+POT_LIFT,z=q[2];
   if(v==="alzado") return {s:[x,y],d:z};
   if(v==="planta") return {s:[x,-z],d:y};
   const x1=x*ISO_C+z*ISO_S, z1=-x*ISO_S+z*ISO_C;
@@ -161,9 +164,10 @@ function castShadow(model,p,v,per){
   const alz=v==="alzado";
   if(alz){const sn=Math.sin(th);if(sn<0.05||!per.length)return [];const ox=Math.cos(th)*p.sdist/sn,oy=-Math.tan(el)*p.sdist/sn;for(const l of per)polys.push(l.pts.map(q=>[q[0]+ox,q[1]+oy]));}
   else{
-    const G=q=>{const k=Math.max(0,q[1])*ct;return proj(v,[q[0]+k*dx,0,q[2]+k*dz]).s;};
-    for(const c of model.clumps){const b=c.r*c.sy,al=Math.sqrt(Math.pow(c.r*Math.sin(el),2)+Math.pow(b*Math.cos(el),2))/Math.sin(el),g0=[c.x+c.y*ct*dx,0,c.z+c.y*ct*dz],q=[];
-      for(let i=0;i<24;i++){const a=i/24*6.283,u=Math.cos(a)*al,w=Math.sin(a)*c.r;q.push(proj(v,[g0[0]+dx*u-dz*w,0,g0[2]+dz*u+dx*w]).s);}polys.push(q);}
+    const LF=POT_LIFT,G=q=>{const k=Math.max(0,q[1]+LF)*ct;return proj(v,[q[0]+k*dx,-LF,q[2]+k*dz]).s;};
+    for(const c of model.clumps){const b=c.r*c.sy,al=Math.sqrt(Math.pow(c.r*Math.sin(el),2)+Math.pow(b*Math.cos(el),2))/Math.sin(el),cy=c.y+LF,g0=[c.x+cy*ct*dx,-LF,c.z+cy*ct*dz],q=[];
+      for(let i=0;i<24;i++){const a=i/24*6.283,u=Math.cos(a)*al,w=Math.sin(a)*c.r;q.push(proj(v,[g0[0]+dx*u-dz*w,-LF,g0[2]+dz*u+dx*w]).s);}polys.push(q);}
+    if(p.maceta)for(const S of potSolids(p))polys.push(hull(S.map(G)));
     for(const L of model.limbs){const P=L.pts.map(G);if(P.length>1)polys.push(limbPoly(P,L.w0,L.w1).poly);}
     for(const lf of model.leaves)polys.push(lf.outline.map(G));
     if(model.rocks)for(const rk of model.rocks)for(const f of rk.faces)polys.push(f.v.map(k=>G(rk.P[k])));
@@ -225,6 +229,8 @@ function earclip(pts){
 /* ---------- dibujo de una vista ---------- */
 function drawView(model,p,v){
   setIsoRotation(p.isoRot);
+  POT_LIFT=potLift(p);
+  const pot=!!p.maceta;
   model=seasonModel(model,p);
   const items=[];
   const C="VEG_CONTORNO",D="VEG_DETALLE";
@@ -235,8 +241,8 @@ function drawView(model,p,v){
   const limbTier=(v==="planta"||shrubV||!(p.mode==="masas"||multi))?0:1e6;
   const LX=-0.62,LY=0.78;
   const tier=(c)=>{if(v==="planta"||shrubV||p.mode==="olivo"||p.mode==="cipres"||p.mode==="conifera")return 0;if(multi)return (mulberry(c.seed+3)()<0.35)?2e6:0;if(c.y>=yTop)return 2e6;return (mulberry(c.seed+3)()<0.3)?2e6:0;};
-  const litter=(v!=="alzado"&&model.fallen&&model.fallen.length)?genLitter(model,p).map(lf=>({lf,poly:lf.outline.map(q=>proj(v,q).s)})):[];
-  for(const lf of (litter.length?[]:(model.fallen||[]))){const P=lf.outline.map(q=>proj(v,q)),poly=P.map(o=>o.s);items.push({d:P[0].d,lines:[{pts:poly.concat([poly[0]]),layer:C}],poly,ground:true});}
+  const litter=(!pot&&v!=="alzado"&&model.fallen&&model.fallen.length)?genLitter(model,p).map(lf=>({lf,poly:lf.outline.map(q=>proj(v,q).s)})):[];
+  for(const lf of (litter.length||pot?[]:(model.fallen||[]))){const P=lf.outline.map(q=>proj(v,q)),poly=P.map(o=>o.s);items.push({d:P[0].d,lines:[{pts:poly.concat([poly[0]]),layer:C}],poly,ground:true});}
   for(const lf of model.leaves){
     const P=lf.outline.map(q=>proj(v,q)),poly=P.map(o=>o.s),d=P.reduce((a,o)=>a+o.d,0)/P.length;
     const lines=lf.center?[{pts:lf.center.map(q=>proj(v,q).s),layer:"VEG_CONTORNO*"}]:[{pts:poly.concat([poly[0]]),layer:C}];
@@ -364,7 +370,7 @@ function drawView(model,p,v){
       const poly=gpoly||lp.poly; items.push({d:dd+limbTier,lines,poly});
     });
   }
-  if(p.raices&&v==="alzado"&&model.roots){
+  if(p.raices&&!pot&&v==="alzado"&&model.roots){
     const thin=model.H/700;
     for(const L of model.roots.limbs){
       const P=L.pts.map(q=>proj(v,q)),pp=P.map(o=>o.s),d=P.reduce((a,o)=>a+o.d,0)/P.length;
@@ -380,21 +386,24 @@ function drawView(model,p,v){
       const Lb=[],Rb=[];for(let i=0;i<=8;i++){const t=i/8,cx=bx+lean*t*t,cy=y+h*t,ww=w*(1-t);Lb.push([cx-ww,cy]);Rb.push([cx+ww,cy]);}
       const poly=Lb.concat(Rb.slice(0,8).reverse());items.push({d:dd===undefined?1e12:dd,lines:[{pts:poly.slice(1),layer:C2}],poly,ground:true});}};
     if(v==="alzado"){
-      const hl=Math.max(model.W*0.36,0.3*sc,(p.raices&&model.roots)?model.roots.spread*1.1:0),n=Math.max(30,Math.round(hl*2/(0.025*sc))),pts=[];
+      const hl=Math.max(model.W*0.36,0.3*sc,pot?p.potD*0.85:0,(p.raices&&model.roots)?model.roots.spread*1.1:0),n=Math.max(30,Math.round(hl*2/(0.025*sc))),pts=[];
       let yy=0;for(let i=0;i<=n;i++){const x=-hl+2*hl*i/n;yy=yy*0.8+N(R)*0.004*sc;pts.push([x,yy]);}
       // tramo continuo en el centro y discontinuo hacia los extremos
       const segs=[];let i=0;while(i<n){const t=Math.abs(pts[i][0])/hl;const len=t<0.6?n:Math.max(2,Math.round(U(R,2,6)*(1.2-t)));const gap=t<0.6?0:Math.round(U(R,1,3)*(0.5+t));segs.push(pts.slice(i,Math.min(n+1,i+len+1)));i+=len+gap;}
       for(const sg of segs)if(sg.length>1)items.push({d:p.raices?1e12-1:-1e12,lines:[{pts:sg,layer:C2}],poly:null,ground:true});
-      const nt=Math.round(hl*2/(0.35*sc));for(let k=0;k<nt;k++){const x=U(R,-hl*0.9,hl*0.9);tuft(x,0,Math.round(U(R,2,6)));}
-      for(let k=0;k<4;k++)tuft(N(R)*model.W*0.04,0,Math.round(U(R,3,6)));
-      for(let k=0;k<Math.round(hl*3);k++){const x=U(R,-hl,hl),r=U(R,0.008,0.025)*sc,q=[];for(let j=0;j<=8;j++){const a=Math.PI*j/8;q.push([x+Math.cos(a)*r*1.5,Math.sin(a)*r]);}items.push({d:-1e12+1,lines:[{pts:q,layer:D}],poly:null});}
-    } else {
+      if(!pot){const nt=Math.round(hl*2/(0.35*sc));for(let k=0;k<nt;k++){const x=U(R,-hl*0.9,hl*0.9);tuft(x,0,Math.round(U(R,2,6)));}
+      if(!pot)for(let k=0;k<4;k++)tuft(N(R)*model.W*0.04,0,Math.round(U(R,3,6)));
+      }
+      if(!pot)for(let k=0;k<Math.round(hl*3);k++){const x=U(R,-hl,hl),r=U(R,0.008,0.025)*sc,q=[];for(let j=0;j<=8;j++){const a=Math.PI*j/8;q.push([x+Math.cos(a)*r*1.5,Math.sin(a)*r]);}items.push({d:-1e12+1,lines:[{pts:q,layer:D}],poly:null});}
+    } else if(!pot) {
       const rg=Math.max(model.W*0.28,0.25*sc),q=[];for(let i=0;i<=72;i++){const a=i/72*6.283,r=rg*(1+0.06*Math.sin(5*a+1)+0.04*Math.sin(9*a));q.push(proj(v,[Math.cos(a)*r,0,Math.sin(a)*r]).s);}
       let i=0;while(i<72){const len=Math.round(U(R,5,12));items.push({d:-1e12,lines:[{pts:q.slice(i,Math.min(73,i+len)),layer:C2}],poly:null,ground:true});i+=len+Math.round(U(R,1,3));}
       for(let k=0;k<10;k++){const a=U(R,0,6.283),r=rg*U(R,0.6,1.05),pb=proj(v,[Math.cos(a)*r,0,Math.sin(a)*r]);tuft(pb.s[0],pb.s[1],Math.round(U(R,2,5)),pb.d);}
       if(!model.rocks)for(let k=0;k<4;k++){const b=proj(v,[N(R)*0.05,0,N(R)*0.05]).s;tuft(b[0],b[1],3);}
     }
   }
+  const potInfo=pot?potItems(p,v,proj,{C,D}):null;
+  if(potInfo)items.push(...potInfo.items);
   if(v==="planta"){const r=Math.max(0.02,model.W*0.01);items.push({d:1e9,lines:[{pts:[[-r,0],[r,0]],layer:D},{pts:[[0,-r],[0,r]],layer:D}],poly:null});}
   items.sort((a,b)=>b.d-a.d);
   let bb=[Infinity,Infinity,-Infinity,-Infinity];
@@ -421,7 +430,7 @@ function drawView(model,p,v){
   const shadow=p.sombraP?castShadow(model,p,v,per):[];
   if(litter.length)lines=addLitter(litter,M,lines,white,shadow,p,v,res);
   for(const L of shadow)for(const q of L){bb[0]=Math.min(bb[0],q[0]);bb[1]=Math.min(bb[1],q[1]);bb[2]=Math.max(bb[2],q[0]);bb[3]=Math.max(bb[3],q[1]);}
-  return {lines,bb,white,shadow};
+  return {lines,bb,white,shadow,potTop:potInfo?potInfo.top:0,potR:potInfo?potInfo.R:0};
 }
 
 /* ---------- hojarasca de otoño (planta e isométrica) ---------- */

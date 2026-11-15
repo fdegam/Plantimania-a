@@ -20,11 +20,12 @@ export class Motion {
   }
 
   // Marco de cada vista: altura, radio y tipo de anclaje.
-  setFrame(view, bb) {
+  // base: altura (o radio, en planta) por debajo de la cual nada se mueve, p. ej. la maceta.
+  setFrame(view, bb, base = 0) {
     const top = Math.max(0.05, bb[3]);
     const radius = Math.max(Math.abs(bb[0]), Math.abs(bb[2]), Math.abs(bb[1]), Math.abs(bb[3]), 0.05);
     const size = Math.max(bb[2] - bb[0], bb[3] - bb[1], 0.1);
-    this.frames[view] = {view, top, radius, size};
+    this.frames[view] = {view, top, radius, size, base: Math.min(base, (view === "planta" ? radius : top) * 0.9)};
   }
 
   active() {
@@ -33,8 +34,8 @@ export class Motion {
 
   // Peso de anclaje: 0 en el suelo o en el centro del tronco (planta), 1 en lo más alto o en el borde de la copa.
   weight(f, x, y) {
-    if (f.view === "planta") return Math.min(1, Math.hypot(x, y) / f.radius);
-    return Math.min(1, Math.max(0, y / f.top));
+    if (f.view === "planta") return Math.min(1, Math.max(0, (Math.hypot(x, y) - f.base) / (f.radius - f.base)));
+    return Math.min(1, Math.max(0, (y - f.base) / (f.top - f.base)));
   }
 
   // Desplazamiento en metros de un punto (x, y) de la vista.

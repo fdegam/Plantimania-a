@@ -25,7 +25,7 @@ export function layoutScene(views, order) {
 // Encaje en pantalla con margen para que la planta pueda moverse sin cortarse.
 export function fit(layout, W, H, inset) {
   const {bb} = layout;
-  const padX = Math.max(40, W * 0.07), padTop = Math.max(100, H * 0.13), padBottom = inset.bottom + 46;
+  const padX = Math.max(40, W * 0.07), padTop = Math.max(100, H * 0.13, (inset.top || 0) + 16), padBottom = inset.bottom + 46;
   const rightRoom = 64 + (inset.right || 0);
   const aw = W - padX * 2 - rightRoom, ah = H - padTop - padBottom;
   const bw = bb[2] - bb[0], bh = bb[3] - bb[1];
@@ -191,6 +191,7 @@ export function skeletonBounds(skel, cam) {
   const c = skel.clumps;
   for (let i = 0; i < c.length; i += 5) { const q = P(c[i], c[i + 1], c[i + 2]); add(q[0], q[1], c[i + 3]); }
   for (const g of [skel.limbs, skel.leaves, skel.rocks]) for (let i = 0; i < g.xyz.length; i += 3) { const q = P(g.xyz[i], g.xyz[i + 1], g.xyz[i + 2]); add(q[0], q[1]); }
+  if (skel.pot) for (const a of [skel.pot.body, skel.pot.rim]) for (let i = 0; i < a.length; i += 3) { const q = P(a[i], a[i + 1], a[i + 2]); add(q[0], q[1]); }
   return bb;
 }
 
@@ -228,6 +229,14 @@ export function drawSkeleton(ctx, skel, cam, tf, colors) {
       ctx.strokeStyle = fill; ctx.lineWidth = w; ctx.stroke();
     } else if (it.k === 2) { path(it); ctx.strokeStyle = ink; ctx.lineWidth = thin; ctx.stroke(); }
   }
+  // 1b) la maceta (cuerpo y borde), tapa el pie del tronco
+  if (skel.pot) for (const a of [skel.pot.body, skel.pot.rim]) {
+    const pts = [];
+    for (let i = 0; i < a.length; i += 3) pts.push(S(P(a[i], a[i + 1], a[i + 2])));
+    const h = hull2(pts);
+    ctx.beginPath(); h.forEach(([x, y], j) => j ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = ink; ctx.lineWidth = thin * 1.4; ctx.stroke();
+  }
   // 2) la copa como una sola silueta: contorno de tinta por fuera y relleno dentro,
   //    igual que el perímetro del dibujo final
   const masses = items.filter(it => it.k === 0);
@@ -246,3 +255,12 @@ export function drawSkeleton(ctx, skel, cam, tf, colors) {
 
 // Barra de escala sola (para los fotogramas de la transición).
 export function drawScale(ctx, sc, opts, colors) { drawScaleBar(ctx, sc, opts, colors); }
+
+function hull2(P) {
+  const pts = P.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = [];
+  for (const q of pts) { while (lo.length > 1 && cross(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  for (let i = pts.length - 1; i >= 0; i--) { const q = pts[i]; while (up.length > 1 && cross(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}

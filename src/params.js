@@ -11,6 +11,7 @@ export const DEFAULT_SETTINGS = {
   suelo: true,
   perim: true, gp: 0.6, gc: 0.3, gr: 0.25, gd: 0.13,
   escala: 100, dxfw: true, tres: false,
+  maceta: false, potShape: "redonda", potD: 0.6, potH: 0.5, // planta en maceta (medidas en m)
   isoRot: 0, // giro de la isométrica en grados (0, 90, 180, 270)
   simp: 0, // simplificación del perímetro exterior (0 = detalle completo para CAD)
 };

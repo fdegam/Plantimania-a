@@ -23,7 +23,40 @@
   </div>
   <canvas class="dots dots-front" id="dotsFront" aria-hidden="true"></canvas>
   <a class="start" id="b_comenzar" href="#generador">Comenzar</a>
+  <a class="landing-more" href="#sobre">Qué es Plantimanía</a>
   <p class="landing-tags"><span>Árboles, arbustos y trepadoras</span><span>Alzado · Planta · Isométrica</span><span>Bloques DXF y SVG</span></p>
+</section>
+
+<section class="about" id="sobre" aria-labelledby="t_sobre" hidden>
+  <div class="about-inner">
+    <a class="about-back" href="#inicio">Plantimanía</a>
+    <h1 id="t_sobre">Vegetación a medida para <em>tus</em> planos</h1>
+    <p class="about-lead">Plantimanía es un generador de vegetación para arquitectura, paisajismo e ilustración. Eliges una especie, ajustas su tamaño, su densidad y la estación del año, y te llevas un bloque listo para colocar en alzado, planta o isométrica.</p>
+    <p>Ningún ejemplar se repite. Cada árbol se construye a partir de un esqueleto en tres dimensiones —tronco, ramas, masas de hoja— y se dibuja en cada vista con su perímetro, sus líneas interiores y su detalle. Si pulsas «Otra», sale otro árbol de la misma especie con otras ramas y otra silueta. Las variaciones son prácticamente infinitas.</p>
+
+    <h2>Para quién</h2>
+    <dl class="about-uses">
+      <dt>Proyectos en AutoCAD</dt>
+      <dd>El DXF sale en metros, como bloque y con capas separadas: perímetro, contorno, detalle, raíces, relleno y sombra. El perímetro es una polilínea cerrada, así que puedes sombrearlo o rellenarlo sin limpiar nada. Si lo necesitas en DWG, ábrelo en AutoCAD y guárdalo.</dd>
+      <dt>Proyectos en Revit</dt>
+      <dd>Revit se atasca con perímetros de miles de vértices. Al exportar eliges «Revit» y el contorno exterior se simplifica sin perder la forma, sin tramos diminutos y sin cruces, listo para una región rellena o una familia de detalle.</dd>
+      <dt>Ilustración</dt>
+      <dd>El SVG lleva cada capa como un grupo y los grosores de línea en milímetros a la escala que elijas, para seguir trabajando en Illustrator, Affinity o Inkscape.</dd>
+    </dl>
+
+    <h2>Cómo funciona</h2>
+    <ol class="about-steps">
+      <li><strong>Elige la planta.</strong> Árboles de copa, árboles con la estructura a la vista, palmeras, arbustos, setos, herbáceas, trepadoras y rocas. También puedes plantarla en una maceta redonda o cuadrada del tamaño que quieras.</li>
+      <li><strong>Ajústala.</strong> Altura, ancho de copa, cantidad de follaje, dentado del borde, huecos de luz, número de troncos o de ejemplares. En las especies de hoja caduca, la estación cambia la copa: más frondosa en primavera, hojas en el suelo en otoño y ramas desnudas en invierno.</li>
+      <li><strong>Exporta.</strong> La vista que tengas abierta o las tres juntas, en DXF o SVG, a escala 1:20, 1:50, 1:100 o 1:200, con sombra proyectada y raíces si las quieres.</li>
+    </ol>
+
+    <h2>Lo que se ve y lo que se exporta</h2>
+    <p>En pantalla la planta se mueve con el viento y puedes doblar sus ramas con el cursor; es solo para jugar con ella. El archivo que descargas recoge siempre la planta en reposo, dibujada con la tinta y los grosores de un plano.</p>
+
+    <p class="about-sign">Un proyecto de Carlos Fernández Gámez-<a class="firma" href="https://fdegam.github.io/EFEDEGAM/" target="_blank" rel="noopener">EFEDEGAM</a>. Si echas algo en falta, escríbeme desde el buzón de sugerencias del generador.</p>
+    <a class="start about-start" href="#generador">Comenzar</a>
+  </div>
 </section>
 
 <div class="app">
@@ -45,6 +78,10 @@
       <button role="tab" data-v="tres" aria-selected="false">Las tres vistas</button>
     </div>
     <div class="actions">
+      <a class="glass" href="#sobre" title="Qué es Plantimanía" aria-label="Qué es Plantimanía">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 9v5M10 6.3v.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span>Qué es</span>
+      </a>
       <button class="glass" id="b_sugerencias" aria-haspopup="dialog" aria-controls="sugerencias">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4.5h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H9l-4 3v-3H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
         <span>Sugerencias</span>
@@ -170,6 +207,14 @@
           <button class="stamp" id="variante" title="Otra variante (tecla R)">Otra</button>
         </div>
       </div>
+
+      <div class="group">
+        <span class="label" id="l_maceta">Maceta</span>
+        <div class="row-controls">
+          <button class="switch" role="switch" aria-checked="false" id="potOn" aria-labelledby="l_maceta"><span></span></button>
+          <button class="stamp" id="b_potAjustes" title="Forma y tamaño de la maceta">Medidas</button>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -208,6 +253,19 @@
       <div class="range"><label for="altura">Altura total</label><output data-for="H"></output><input type="range" id="altura" data-key="H" min="0.3" max="20" step="0.1"></div>
       <div class="range"><label for="ancho">Ancho de copa o largo</label><output data-for="W"></output><input type="range" id="ancho" data-key="W" min="0.3" max="16" step="0.1"></div>
       <div class="range"><label for="tronco">Altura de tronco libre</label><output data-for="tr"></output><input type="range" id="tronco" data-key="tr" min="0" max="0.6" step="0.01"></div>
+    </div></details>
+
+    <details class="card" id="cardMaceta"><summary><span class="t">Maceta</span></summary><div class="cbody">
+      <label class="check"><input type="checkbox" data-key="maceta"> Plantar en maceta</label>
+      <label class="field">Forma
+        <select data-key="potShape">
+          <option value="redonda">Redonda</option>
+          <option value="cuadrada">Cuadrada</option>
+        </select>
+      </label>
+      <div class="range"><label for="potD">Ancho de la maceta</label><output data-for="potD"></output><input type="range" id="potD" data-key="potD" min="0.2" max="2.5" step="0.05"></div>
+      <div class="range"><label for="potH">Alto de la maceta</label><output data-for="potH"></output><input type="range" id="potH" data-key="potH" min="0.15" max="1.5" step="0.05"></div>
+      <p class="note" id="potNote">El tamaño de la planta se ajusta en Dimensiones. En maceta no se dibujan raíces, hierba ni hojas en el suelo.</p>
     </div></details>
 
     <details class="card" open><summary><span class="t">Grafismo</span></summary><div class="cbody">
