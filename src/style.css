@@ -466,6 +466,7 @@ input[type=number] { width: 84px; font-family: var(--font-ui); font-size: 14px; 
   transition: transform .22s cubic-bezier(.2, .8, .2, 1);
 }
 .drawer.open { transform: none; }
+.drawer[hidden] { display: none; }   /* el display:flex de arriba anulaba hidden: el panel cerrado seguía en el Tab */
 .drawer-head {
   position: sticky; top: 0; z-index: 1;
   display: flex; align-items: flex-end; justify-content: space-between;

@@ -211,6 +211,10 @@ function syncInputs() {
     if (el.type === "checkbox") el.checked = !!v; else el.value = v;
   }
   for (const o of document.querySelectorAll("output[data-for]")) o.textContent = FORMAT[o.dataset.for](state.values[o.dataset.for]);
+  for (const el of document.querySelectorAll("input[type=range][data-key]")) {
+    const o = document.querySelector(`output[data-for="${el.dataset.key}"]`);
+    if (o) el.setAttribute("aria-valuetext", o.textContent);
+  }
   const revit = state.values.simp > 0;
   document.querySelectorAll("#destSeg button").forEach(b => b.setAttribute("aria-checked", String((+b.dataset.simp > 0) === revit)));
   $("b_dxf").textContent = revit ? "Descargar DXF para Revit" : "Descargar DXF para AutoCAD";
@@ -309,7 +313,16 @@ document.querySelectorAll("#estSeg button").forEach(b => b.addEventListener("cli
   requestDraw();
 }));
 
-document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
+const tabs = [...document.querySelectorAll(".tabs button")];
+function markTab(b) { tabs.forEach(x => { x.setAttribute("aria-selected", String(x === b)); x.tabIndex = x === b ? 0 : -1; }); }
+markTab(tabs.find(b => b.getAttribute("aria-selected") === "true") || tabs[0]);
+tabs.forEach((b, i) => b.addEventListener("keydown", e => {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+  e.preventDefault();
+  const n = e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : (i + (e.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+  tabs[n].focus(); tabs[n].click();
+}));
+tabs.forEach(b => b.addEventListener("click", () => {
   const prev = state.view, next = b.dataset.v;
   if (prev === next) return;
   state.view = next;
@@ -319,7 +332,7 @@ document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click
     const d = Math.atan2(Math.sin(to.az - from.az), Math.cos(to.az - from.az));
     startTransition(from, {az: from.az + d, el: to.el});
   }
-  document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", String(x === b)));
+  markTab(b);
   updateFicha();
   requestDraw();
 }));
@@ -368,11 +381,12 @@ document.querySelectorAll("#windDir button").forEach(b => b.addEventListener("cl
 /* panel de ajustes */
 function openDrawer() {
   $("ajustes").hidden = false;
-  requestAnimationFrame(() => { $("ajustes").classList.add("open"); resize(); });
+  requestAnimationFrame(() => { $("ajustes").classList.add("open"); resize(); $("b_cerrar").focus({preventScroll: true}); });
   $("b_ajustes").setAttribute("aria-expanded", "true"); closeExport();
 }
 function closeDrawer() {
   const d = $("ajustes"); if (d.hidden) return;
+  if (d.contains(document.activeElement)) $("b_ajustes").focus({preventScroll: true});
   d.classList.remove("open"); $("b_ajustes").setAttribute("aria-expanded", "false"); resize();
   setTimeout(() => { if (!d.classList.contains("open")) d.hidden = true; }, reduceMotion.matches ? 0 : 220);
 }

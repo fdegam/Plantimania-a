@@ -72,10 +72,10 @@
 
   <nav class="bar">
     <div class="tabs" role="tablist" aria-label="Vista">
-      <button role="tab" data-v="alzado" aria-selected="true">Alzado</button>
-      <button role="tab" data-v="planta" aria-selected="false">Planta</button>
-      <button role="tab" data-v="iso" aria-selected="false">Isométrica</button>
-      <button role="tab" data-v="tres" aria-selected="false">Las tres vistas</button>
+      <button role="tab" aria-controls="stage" data-v="alzado" aria-selected="true">Alzado</button>
+      <button role="tab" aria-controls="stage" data-v="planta" aria-selected="false">Planta</button>
+      <button role="tab" aria-controls="stage" data-v="iso" aria-selected="false">Isométrica</button>
+      <button role="tab" aria-controls="stage" data-v="tres" aria-selected="false">Las tres vistas</button>
     </div>
     <div class="actions">
       <a class="glass" href="#sobre" title="Qué es Plantimanía" aria-label="Qué es Plantimanía">
@@ -121,7 +121,7 @@
   </nav>
 
   <main class="sheet" id="stage">
-    <canvas id="cv" tabindex="0" aria-label="Dibujo de la planta. Arrastra una rama para doblarla."></canvas>
+    <canvas id="cv" role="img" aria-label="Dibujo de la planta. Arrastra una rama para doblarla."></canvas>
     <div class="ficha" aria-live="polite">
       <p class="kicker" id="f_vista">Alzado</p>
       <h2 id="f_nombre">Olivo</h2>
