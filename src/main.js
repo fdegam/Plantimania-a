@@ -21,19 +21,29 @@ const motion = new Motion();
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
 /* ---------- worker ---------- */
-const worker = new Worker(new URL("./worker.js", import.meta.url), {type: "module"});
-let reqId = 0, pending = new Map(), scene = null;
+let worker = null, reqId = 0, pending = new Map(), scene = null, drawBusy = false;
+function startWorker() {
+  worker = new Worker(new URL("./worker.js", import.meta.url), {type: "module"});
+  worker.onmessage = e => {
+    const {id, type} = e.data, job = pending.get(id);
+    if (!job) return;
+    pending.delete(id);
+    type === "error" ? job.reject(new Error(e.data.message)) : job.resolve(e.data);
+  };
+}
+startWorker();
+// Un cálculo nuevo cancela el anterior: el worker se reinicia y las peticiones en curso se descartan.
+function cancelWorker() {
+  worker.terminate();
+  for (const job of pending.values()) job.reject(new Error("cancelado"));
+  pending.clear();
+  startWorker();
+}
 
 function ask(msg) {
   const id = ++reqId;
   return new Promise((resolve, reject) => { pending.set(id, {resolve, reject}); worker.postMessage({...msg, id}); });
 }
-worker.onmessage = e => {
-  const {id, type} = e.data, job = pending.get(id);
-  if (!job) return;
-  pending.delete(id);
-  type === "error" ? job.reject(new Error(e.data.message)) : job.resolve(e.data);
-};
 
 const params = () => buildParams(state.species, state.values, state.seed);
 const viewList = () => state.view === "tres" ? ["alzado", "planta", "iso"] : [state.view];
@@ -45,6 +55,8 @@ function requestDraw(delay = 0) {
   drawTimer = setTimeout(async () => {
     const id = ++latest, p = params(), list = viewList();
     $("busy").hidden = false;
+    if (drawBusy) cancelWorker();          // hay un cálculo obsoleto en curso: se cancela
+    drawBusy = true;
     try {
       const res = await ask({type: "draw", params: p, views: list});
       if (id !== latest) return;
@@ -53,8 +65,9 @@ function requestDraw(delay = 0) {
       if (tr) tr.ready = true;
       showSimplification(p, res.stats);
     } catch (err) {
-      console.error(err);
+      if (err.message !== "cancelado") console.error(err);
     } finally {
+      drawBusy = false;
       if (id === latest) $("busy").hidden = true;
     }
   }, delay);
@@ -102,7 +115,7 @@ function paint() {
   ctx.clearRect(0, 0, cssW, cssH);
   if (!scene || !scene.fitted) return;
   const inset = dockInset();
-  drawScene(ctx, scene, motion, colors, {scaleX: Math.max(24, cssW * 0.04), scaleY: cssH - inset.bottom - 22});
+  drawScene(ctx, scene, motion, colors, {scaleX: Math.max(24, cssW * 0.04), scaleY: cssH - inset.bottom - 22, maxW: cssW * 0.45});
 }
 
 /* ---------- cambio de vista en 3D ---------- */
@@ -113,7 +126,7 @@ let lastSkel = null, tr = null;
 const MOVE_MS = 950, FADE_MS = 280;
 const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const lerp = (a, b, t) => a + (b - a) * t;
-const scaleOpts = () => ({scaleX: Math.max(24, cssW * 0.04), scaleY: cssH - dockInset().bottom - 22});
+const scaleOpts = () => ({scaleX: Math.max(24, cssW * 0.04), scaleY: cssH - dockInset().bottom - 22, maxW: cssW * 0.45});
 
 function startTransition(from, to) {
   if (reduceMotion.matches || !lastSkel || !scene?.fitted || scene.layout.items.length !== 1) return;

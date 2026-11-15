@@ -138,8 +138,13 @@ export function drawScene(ctx, scene, motion, colors, opts) {
 
 function drawScaleBar(ctx, sc, opts, colors) {
   const steps = [0.1, 0.2, 0.5, 1, 2, 5, 10];
-  const step = steps.find(s => s * sc >= 36) || 10;
-  const n = 4, x0 = opts.scaleX, y0 = opts.scaleY;
+  // paso legible (≥ 36 px) que quepa en la lámina; si no cabe, se acorta a dos tramos
+  const maxW = opts.maxW || 320;
+  let step = steps.find(s => s * sc >= 36) || 10;
+  let n = 4;
+  if (4 * step * sc > maxW) n = 2;
+  if (2 * step * sc > maxW) { step = steps.find(s => s * sc >= 24 && 2 * s * sc <= maxW) || steps[0]; }
+  const x0 = opts.scaleX, y0 = opts.scaleY;
   ctx.save();
   ctx.fillStyle = colors.ui; ctx.strokeStyle = colors.ui; ctx.lineWidth = 1;
   for (let i = 0; i < n; i += 2) ctx.fillRect(x0 + i * step * sc, y0 - 4, step * sc, 4);
