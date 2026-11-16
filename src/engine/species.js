@@ -19,6 +19,11 @@ export const SPECIES={
   roca:{mode:"roca",shape:"angulosa",H:0.9,W:1.5,tr:0,ramas:0,tallos:1,dens:1,jag:1,huecos:0,cs:1,hint:"Roca de caras planas y aristas vivas, medio enterrada. Dentado = irregularidad; Sombreado = rayado de las caras en sombra.",rt:"ninguno",rd:0,rs:0,rtxt:"Sin raíces."},
   canto:{mode:"roca",shape:"rodado",H:0.55,W:1,tr:0,ramas:0,tallos:1,dens:1,jag:1,huecos:0,cs:1,hint:"Canto redondeado y liso. Dentado = irregularidad; Sombreado = rayado del lado en sombra.",rt:"ninguno",rd:0,rs:0,rtxt:"Sin raíces."},
   rocas:{mode:"roca",shape:"grupo",H:1,W:3,tr:0,ramas:0,tallos:1,dens:1,jag:1,huecos:0,cs:1,hint:"Grupo de rocas angulosas y redondeadas de varios tamaños. Cantidad = número de rocas.",rt:"ninguno",rd:0,rs:0,rtxt:"Sin raíces."},
+  nenufar:{mode:"nenufar",shape:"nenufar",H:0.25,W:1.4,tr:0,ramas:0,tallos:1,dens:1,jag:0,huecos:0,cs:1,hint:"Hojas flotantes en disco con muesca y flores que emergen. Tamaño = diámetro de la hoja.",rt:"ninguno",rd:0,rs:0,rtxt:"Sin raíces visibles: crecen en el fondo del agua."},
+  loto:{mode:"hojagrande",shape:"loto",H:1.2,W:1.4,tr:0,ramas:0,tallos:1,dens:1,jag:0,huecos:0,cs:1,hint:"Hojas escudadas sobre tallos largos y flores sobre el agua.",rt:"rizoma",rd:0.3,rs:0.6,rtxt:"Rizoma horizontal bajo el agua."},
+  iris:{mode:"graminea",shape:"iris",H:0.7,W:0.6,tr:0,ramas:0,tallos:1,dens:1,jag:0,huecos:0,cs:1,hint:"Mata de hojas en espada que emerge de la orilla.",rt:"rizoma",rd:0.3,rs:0.5,rtxt:"Rizoma en la orilla."},
+  espadana:{mode:"graminea",shape:"espadana",H:2.2,W:0.8,tr:0,ramas:0,tallos:1,dens:1,jag:0,huecos:0,cs:1,hint:"Hojas largas y erguidas con la espiga marrón en la parte alta.",rt:"rizoma",rd:0.3,rs:0.6,rtxt:"Rizoma en el fango."},
+  papiro:{mode:"graminea",shape:"papiro",H:1.6,W:1.0,tr:0,ramas:0,tallos:1,dens:1.4,jag:0,huecos:0,cs:1,hint:"Tallos finos y densos que terminan en penachos.",rt:"fasciculada",rd:0.3,rs:0.5,rtxt:"Fasciculada, en el fango."},
   graminea:{mode:"graminea",shape:"graminea",H:0.9,W:1.1,tr:0,ramas:0,tallos:1,dens:1,jag:0,huecos:0,cs:1,hint:"Mata de hojas finas arqueadas. Tamaño = anchura de hoja.",rt:"fasciculada",rd:0.9,rs:0.7,rtxt:"Fasciculada: cabellera densa de raíces finas, más profunda que alta."}
 };
 

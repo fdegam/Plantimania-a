@@ -34,7 +34,7 @@ function gen(p){
   return genOne(GROVE.has(p.species)?Object.assign({},p,{tallos:1}):p);
 }
 function genOne(p){
-  const g={conifera:genConifera,hiedra:genHiedra,roca:genRoca,arbusto:genArbusto,cipres:genCipres,olivo:genOlivo,masas:genMasas,multitallo:genMultitallo,rosetas:genRosetas,palmera:genPalmera,hojagrande:genHojaGrande,graminea:genGraminea}[p.mode]||genMasas;
+  const g={nenufar:genNenufar,conifera:genConifera,hiedra:genHiedra,roca:genRoca,arbusto:genArbusto,cipres:genCipres,olivo:genOlivo,masas:genMasas,multitallo:genMultitallo,rosetas:genRosetas,palmera:genPalmera,hojagrande:genHojaGrande,graminea:genGraminea}[p.mode]||genMasas;
   const m=g(p);m.leaves=m.leaves||[];m.roots=p.rt==='ninguno'?{limbs:[],lines:[],spread:0}:genRoots(m,p);return m;
 }
 function genMultitallo(p){
@@ -105,6 +105,31 @@ function genHojaGrande(p){
   }
   return {clumps:[],limbs,leaves,H,W};
 }
+// Nenúfar: hojas flotantes en forma de disco con muesca hacia el centro y flores que emergen.
+function genNenufar(p){
+  const R=mulberry(p.seed*9973+17),H=p.H,W=p.W,leaves=[];
+  const n=Math.max(4,Math.round(9*p.dens));
+  for(let i=0;i<n;i++){
+    const a=R()*6.283,d=W*0.42*Math.sqrt(R()),cx=Math.cos(a)*d,cz=Math.sin(a)*d*0.8;
+    const r=W*U(R,0.09,0.13)*p.cs,nt=R()*6.283,pts=[];
+    for(let k=0;k<=72;k++){
+      const th=2*Math.PI*k/72;let rr=r;
+      const df=Math.abs(Math.atan2(Math.sin(th-nt),Math.cos(th-nt)));
+      if(df<0.32)rr=r*(0.15+0.85*df/0.32);      // muesca de la hoja, ancha y visible
+      pts.push([cx+Math.cos(th)*rr,0.012,cz+Math.sin(th)*rr]);
+    }
+    leaves.push({outline:pts,rib:null,center:null,veins:[]});
+  }
+  const nf=Math.round(2*p.dens);
+  for(let f=0;f<nf;f++){
+    const a=R()*6.283,d=W*0.25*Math.sqrt(R()),B=[Math.cos(a)*d,0.01,Math.sin(a)*d*0.8];
+    const L=W*0.22*p.cs;
+    B[1]=0.05;
+    for(let k=0;k<5;k++)leaves.push(leaf3(B,dirAE(a+k*1.257,U(R,0.5,0.9)),L,L*0.42,0.1,0,R,"petal"));
+  }
+  return {clumps:[],limbs:[],leaves,H,W};
+}
+
 function genGraminea(p){
   const R=mulberry(p.seed*9973+17),H=p.H,W=p.W,leaves=[];
   const n=Math.max(20,Math.round(110*p.dens));
