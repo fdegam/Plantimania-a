@@ -24,6 +24,7 @@ export const SPECIES={
   iris:{mode:"graminea",shape:"iris",H:0.7,W:0.6,tr:0,ramas:0,tallos:1,dens:1,jag:0,huecos:0,cs:1,hint:"Mata de hojas en espada que emerge de la orilla.",rt:"rizoma",rd:0.3,rs:0.5,rtxt:"Rizoma en la orilla."},
   espadana:{mode:"graminea",shape:"espadana",H:2.2,W:0.8,tr:0,ramas:0,tallos:1,dens:1,jag:0,huecos:0,cs:1,hint:"Hojas largas y erguidas con la espiga marrón en la parte alta.",rt:"rizoma",rd:0.3,rs:0.6,rtxt:"Rizoma en el fango."},
   papiro:{mode:"graminea",shape:"papiro",H:1.6,W:1.0,tr:0,ramas:0,tallos:1,dens:1.4,jag:0,huecos:0,cs:1,hint:"Tallos finos y densos que terminan en penachos.",rt:"fasciculada",rd:0.3,rs:0.5,rtxt:"Fasciculada, en el fango."},
+  enea:{mode:"enea",shape:"enea",H:2.0,W:0.9,tr:0,ramas:0,tallos:1,dens:1,jag:0,huecos:0,cs:1,hint:"Hojas largas y erguidas con espigas marrones cilíndricas en lo alto. Tamaño = altura.",rt:"rizoma",rd:0.3,rs:0.5,rtxt:"Rizoma en el fango."},
   graminea:{mode:"graminea",shape:"graminea",H:0.9,W:1.1,tr:0,ramas:0,tallos:1,dens:1,jag:0,huecos:0,cs:1,hint:"Mata de hojas finas arqueadas. Tamaño = anchura de hoja.",rt:"fasciculada",rd:0.9,rs:0.7,rtxt:"Fasciculada: cabellera densa de raíces finas, más profunda que alta."}
 };
 

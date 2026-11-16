@@ -34,7 +34,7 @@ function gen(p){
   return genOne(GROVE.has(p.species)?Object.assign({},p,{tallos:1}):p);
 }
 function genOne(p){
-  const g={nenufar:genNenufar,conifera:genConifera,hiedra:genHiedra,roca:genRoca,arbusto:genArbusto,cipres:genCipres,olivo:genOlivo,masas:genMasas,multitallo:genMultitallo,rosetas:genRosetas,palmera:genPalmera,hojagrande:genHojaGrande,graminea:genGraminea}[p.mode]||genMasas;
+  const g={enea:genEnea,nenufar:genNenufar,conifera:genConifera,hiedra:genHiedra,roca:genRoca,arbusto:genArbusto,cipres:genCipres,olivo:genOlivo,masas:genMasas,multitallo:genMultitallo,rosetas:genRosetas,palmera:genPalmera,hojagrande:genHojaGrande,graminea:genGraminea}[p.mode]||genMasas;
   const m=g(p);m.leaves=m.leaves||[];m.roots=p.rt==='ninguno'?{limbs:[],lines:[],spread:0}:genRoots(m,p);return m;
 }
 function genMultitallo(p){
@@ -138,6 +138,25 @@ function genNenufar(p){
     for(let k=0;k<6;k++)leaves.push(leaf3(B,dirAE(a+k*1.047,U(R,0.55,0.95)),L,L*0.36,0.05,0,R,"petal"));
   }
   return {clumps:[],limbs:[],twigs,leaves,H,W};
+}
+
+// Enea (Typha): hojas largas y erguidas más una espiga cilíndrica en lo alto de cada tallo.
+function genEnea(p){
+  const R=mulberry(p.seed*9973+17),H=p.H,W=p.W,leaves=[],twigs=[],clumps=[];
+  // hojas agrupadas en pocos mechones (no una a una): así el perímetro tiene pocos contornos
+  const ns=Math.max(3,Math.round(5*p.dens));
+  for(let k=0;k<ns;k++){
+    const az=R()*6.283,rr=W*0.16*Math.sqrt(R()),top=H*U(R,0.75,0.95);
+    const base=[Math.cos(az)*rr,0,Math.sin(az)*rr];
+    // mechón: 6 hojas que salen juntas del mismo punto
+    for(let j=0;j<6;j++){
+      const a2=az+(j-2.5)*0.12,el=U(R,1.1,1.4);
+      leaves.push(leaf3(base,dirAE(a2,el),Math.min(top*1.05,H),H*0.025*p.cs+0.01,0.05,0,R,"blade"));
+    }
+    twigs.push([base,[base[0],top*0.5,base[2]],[base[0],top,base[2]]]);
+    clumps.push({x:base[0],y:top-H*0.04,z:base[2],r:H*0.014*p.cs,sy:4,seed:Math.floor(R()*1e9),fine:true,cattail:true});
+  }
+  return {clumps,limbs:[],twigs,leaves,H,W};
 }
 
 function genGraminea(p){
