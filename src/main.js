@@ -457,7 +457,7 @@ form.addEventListener("submit", async e => {
       headers: {"Content-Type": "application/json", Accept: "application/json"},
       body: JSON.stringify({
         access_key: SUGGESTIONS.accessKey,
-        subject: "Nueva sugerencia en Plantimanía",
+        subject: "PLANTIMANÍA_SUGERENCIA",
         from_name: "Plantimanía",
         name: data.name || "Anónimo",
         email: data.email || undefined,
