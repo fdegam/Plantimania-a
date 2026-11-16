@@ -143,7 +143,13 @@ function classify(M,trace){
   if(!trace)return M.out.map(fix);
   const out=[],d=M.res*2.2;
   // 1) silueta, oculta donde la tapan las matas del suelo
-  for(const loop of traceMask(M))out.push({pts:loop,layer:"VEG_PERIMETRO",closed:true,outer:loop.outer});
+  // Manchas exteriores diminutas (ruido de la máscara, no hojas ni tallos) se descartan:
+  // menos del 1,2 % de la envolvente de la planta en área equivalente.
+  const minOuter=Math.pow(Math.max(M.w,M.h)*M.res*0.012,2);
+  for(const loop of traceMask(M)){
+    if(loop.outer&&Math.abs(ringArea(loop))<minOuter)continue;
+    out.push({pts:loop,layer:"VEG_PERIMETRO",closed:true,outer:loop.outer});
+  }
   // 2) líneas interiores: se quitan los tramos que caen sobre la silueta
   for(const l of M.out){
     if(l.layer!=="VEG_CONTORNO"){out.push(fix(l));continue;}
