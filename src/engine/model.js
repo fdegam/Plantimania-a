@@ -105,29 +105,39 @@ function genHojaGrande(p){
   }
   return {clumps:[],limbs,leaves,H,W};
 }
-// Nenúfar: hojas flotantes en forma de disco con muesca hacia el centro y flores que emergen.
+// Nenúfar: hojas flotantes circulares con cuña recortada hasta el centro y nervios radiales,
+// tallos finos que bajan desde cada hoja y flores de pétalos en copa (como en los planos de referencia).
 function genNenufar(p){
-  const R=mulberry(p.seed*9973+17),H=p.H,W=p.W,leaves=[];
+  const R=mulberry(p.seed*9973+17),H=p.H,W=p.W,leaves=[],twigs=[];
   const n=Math.max(4,Math.round(9*p.dens));
   for(let i=0;i<n;i++){
-    const a=R()*6.283,d=W*0.42*Math.sqrt(R()),cx=Math.cos(a)*d,cz=Math.sin(a)*d*0.8;
-    const r=W*U(R,0.09,0.13)*p.cs,nt=R()*6.283,pts=[];
+    const a=R()*6.283,d=W*0.36*Math.sqrt(R()),cx=Math.cos(a)*d,cz=Math.sin(a)*d*0.8;
+    const r=W*U(R,0.09,0.13)*p.cs,nt=R()*6.283,wd=0.42,pts=[],veins=[];
     for(let k=0;k<=72;k++){
-      const th=2*Math.PI*k/72;let rr=r;
+      const th=2*Math.PI*k/72;
       const df=Math.abs(Math.atan2(Math.sin(th-nt),Math.cos(th-nt)));
-      if(df<0.32)rr=r*(0.15+0.85*df/0.32);      // muesca de la hoja, ancha y visible
+      const rr=df<wd?r*Math.max(0.02,df/wd):r;   // cuña recta hasta el centro
       pts.push([cx+Math.cos(th)*rr,0.012,cz+Math.sin(th)*rr]);
     }
-    leaves.push({outline:pts,rib:null,center:null,veins:[]});
+    for(let v=0;v<9;v++){
+      const th=2*Math.PI*v/9+0.2;
+      const df=Math.abs(Math.atan2(Math.sin(th-nt),Math.cos(th-nt)));
+      if(df<wd+0.12)continue;
+      veins.push([[cx,0.013,cz],[cx+Math.cos(th)*r*0.82,0.013,cz+Math.sin(th)*r*0.82]]);
+    }
+    leaves.push({outline:pts,rib:null,center:null,veins});
+    // tallo fino que baja desde el centro de la hoja hasta el fondo
+    const dep=H*U(R,1.2,2.4),bend=W*0.05;
+    const mid=[cx+bend*(R()-0.5),-dep*0.5,cz],end=[cx+bend*(R()-0.5),-dep,cz];
+    twigs.push([[cx,0.01,cz],mid,end]);
   }
   const nf=Math.round(2*p.dens);
   for(let f=0;f<nf;f++){
-    const a=R()*6.283,d=W*0.25*Math.sqrt(R()),B=[Math.cos(a)*d,0.01,Math.sin(a)*d*0.8];
-    const L=W*0.22*p.cs;
-    B[1]=0.05;
-    for(let k=0;k<5;k++)leaves.push(leaf3(B,dirAE(a+k*1.257,U(R,0.5,0.9)),L,L*0.42,0.1,0,R,"petal"));
+    const a=R()*6.283,d=W*0.22*Math.sqrt(R()),B=[Math.cos(a)*d,0.05,Math.sin(a)*d*0.8];
+    const L=W*0.2*p.cs;
+    for(let k=0;k<6;k++)leaves.push(leaf3(B,dirAE(a+k*1.047,U(R,0.55,0.95)),L,L*0.36,0.05,0,R,"petal"));
   }
-  return {clumps:[],limbs:[],leaves,H,W};
+  return {clumps:[],limbs:[],twigs,leaves,H,W};
 }
 
 function genGraminea(p){
