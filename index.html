@@ -224,6 +224,14 @@
           <button class="stamp" id="b_potAjustes" title="Forma y tamaño de la maceta">Medidas</button>
         </div>
       </div>
+
+      <div class="group">
+        <span class="label" id="l_bosque">Bosque</span>
+        <div class="row-controls">
+          <button class="switch" role="switch" aria-checked="false" id="bosqueOn" aria-labelledby="l_bosque"><span></span></button>
+          <span class="note" id="bosqueInfo" style="min-width:90px"></span>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -249,6 +257,11 @@
       <div class="range"><label for="altura">Altura total</label><output data-for="H"></output><input type="range" id="altura" data-key="H" min="0.3" max="20" step="0.1"></div>
       <div class="range"><label for="ancho">Ancho de copa o largo</label><output data-for="W"></output><input type="range" id="ancho" data-key="W" min="0.3" max="16" step="0.1"></div>
       <div class="range"><label for="tronco">Altura de tronco libre</label><output data-for="tr"></output><input type="range" id="tronco" data-key="tr" min="0" max="0.6" step="0.01"></div>
+    </div></details>
+
+    <details class="card" id="cardBosque"><summary><span class="t">Bosque</span></summary><div class="cbody">
+      <div class="range"><label for="bosqueN">Número de árboles</label><output data-for="bosqueN"></output><input type="range" id="bosqueN" data-key="bosqueN" min="2" max="12" step="1"></div>
+      <p class="note">Los árboles se reparten por el terreno con el mismo tamaño que el ejemplar elegido. Solo para árboles (plátano, pino, ciprés, encina…).</p>
     </div></details>
 
     <details class="card" id="cardMaceta"><summary><span class="t">Maceta</span></summary><div class="cbody">

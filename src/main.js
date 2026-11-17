@@ -212,6 +212,7 @@ const FORMAT = {
   sdir: v => v + "° " + ["→", "↗", "↑", "↖", "←", "↙", "↓", "↘"][Math.round(v / 45) % 8], salt: v => v + "°", sdist: v => fmtNum(v) + " m",
   rg: v => "× " + fmtNum(v, 2), rp: v => "× " + fmtNum(v, 2),
   simp: v => v > 0 ? Math.round(v * 100) + " %" : "Nada",
+  bosqueN: v => String(v) + " árboles",
   potD: v => fmtNum(v, 2) + " m", potH: v => fmtNum(v, 2) + " m",
   gp: v => fmtNum(v, 2) + " mm", gc: v => fmtNum(v, 2) + " mm", gr: v => fmtNum(v, 2) + " mm", gd: v => fmtNum(v, 2) + " mm",
 };
@@ -231,6 +232,12 @@ function syncInputs() {
   const revit = state.values.simp > 0;
   document.querySelectorAll("#destSeg button").forEach(b => b.setAttribute("aria-checked", String((+b.dataset.simp > 0) === revit)));
   $("b_dxf").textContent = revit ? "Descargar DXF para Revit" : "Descargar DXF para AutoCAD";
+  const bosqueOk = GROVE.has(state.species);
+  $("bosqueOn").setAttribute("aria-checked", String(!!state.values.bosque && bosqueOk));
+  $("bosqueOn").disabled = !bosqueOk;
+  $("bosqueInfo").textContent = bosqueOk ? (state.values.bosque ? state.values.bosqueN + " árboles" : "") : "Solo árboles";
+  $("bosqueN").disabled = !state.values.bosque;
+  $("bosqueN").closest(".range").classList.toggle("off", !state.values.bosque);
   const pot = !!state.values.maceta;
   $("potOn").setAttribute("aria-checked", String(pot));
   for (const id of ["potD", "potH"]) { $(id).disabled = !pot; $(id).closest(".range").classList.toggle("off", !pot); }
@@ -316,6 +323,7 @@ function setPot(on) {
   syncInputs(); requestDraw();
 }
 $("potOn").addEventListener("click", () => setPot(!state.values.maceta));
+$("bosqueOn").addEventListener("click", () => { state.values.bosque = !state.values.bosque; syncInputs(); requestDraw(); });
 $("b_potAjustes").addEventListener("click", () => { openDrawer(); const c = $("cardMaceta"); c.open = true; setTimeout(() => c.scrollIntoView({block: "start", behavior: reduceMotion.matches ? "auto" : "smooth"}), 250); });
 
 $("tipo").addEventListener("change", e => { state.species = e.target.value; motion.leaves = []; applySpecies(); requestDraw(); });

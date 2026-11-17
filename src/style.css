@@ -733,3 +733,7 @@ a.glass { text-decoration: none; }
 @media (max-width: 860px) {
   .in-app .hero { padding-top: 44px; }   /* franja propia para los puntos de tema, sin tapar el título */
 }
+
+/* con el grupo Bosque, la barra necesita menos aire entre grupos en pantallas medianas */
+@media (max-width: 1500px) { .group { padding: 0 8px; } .select-pill select, #tipo { width: 200px; } .seg button { padding: 0 7px; font-size: 10px; } }
+#bosqueInfo:empty { display: none; }
