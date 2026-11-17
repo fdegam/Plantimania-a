@@ -440,10 +440,9 @@ $("b_svg").addEventListener("click", () => download("svg"));
 const dlg = $("sugerencias"), sugStatus = $("sugStatus"), sugLink = $("b_sug_enviar");
 // El mailto lo construye el propio navegador con el correo predeterminado del usuario.
 function mailtoHref() {
-  // En el cuerpo se añade solo el contexto del dibujo: la sugerencia la escribe la persona en su correo.
-  const ctx = `Especie: ${$("tipo").selectedOptions[0].textContent}\nVista: ${state.view}\nVariante: ${state.seed}`;
-  const q = `subject=${encodeURIComponent(SUGGESTIONS.subject)}&body=${encodeURIComponent(ctx)}`;
-  return `mailto:${SUGGESTIONS.to}?${q}`;
+  // Solo destinatario y asunto: el cuerpo sale vacío para que la persona escriba su sugerencia.
+  return `mailto:${SUGGESTIONS.to}?subject=${encodeURIComponent(SUGGESTIONS.subject)}`;
+}?${q}`;
 }
 $("b_sugerencias").addEventListener("click", () => { closeExport(); closeDrawer(); sugStatus.textContent = ""; sugLink.href = mailtoHref(); dlg.showModal(); sugLink.focus(); });
 sugLink.addEventListener("click", () => { sugLink.href = mailtoHref(); sugStatus.textContent = "Si no se abre el correo, copia efedegam@gmail.com y escribe desde tu cuenta."; });
