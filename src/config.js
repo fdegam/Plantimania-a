@@ -1,11 +1,8 @@
-// Configuración del buzón de sugerencias.
+// Buzón de sugerencias.
 //
-// La web es estática (GitHub Pages), así que los mensajes se envían a través de
-// Web3Forms, que los reenvía al correo con el que se pidió la clave.
-// Cómo conseguir la clave: entra en https://web3forms.com, escribe tu correo y
-// te llega una «Access Key» por email. Pégala aquí. Es pública por diseño:
-// solo sirve para enviarte mensajes a ti y no da acceso a tu correo.
+// La web es estática, así que la sugerencia no se envía desde la web: el botón abre el
+// correo predeterminado de quien escribe, con el destinatario y el asunto ya puestos.
 export const SUGGESTIONS = {
-  endpoint: "https://api.web3forms.com/submit",
-  accessKey: "",
+  to: "efedegam@gmail.com",
+  subject: "PLANTIMANÍA_SUGERENCIA",
 };

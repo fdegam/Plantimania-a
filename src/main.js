@@ -437,45 +437,19 @@ $("b_dxf").addEventListener("click", () => download("dxf"));
 $("b_svg").addEventListener("click", () => download("svg"));
 
 /* ---------- buzón de sugerencias ---------- */
-const dlg = $("sugerencias"), form = $("f_sug"), sugStatus = $("sugStatus");
-const setSugStatus = (text, error = false) => { sugStatus.textContent = text; sugStatus.classList.toggle("error", error); };
-$("b_sugerencias").addEventListener("click", () => { closeExport(); closeDrawer(); setSugStatus(""); dlg.showModal(); $("sug_msg").focus(); });
+const dlg = $("sugerencias"), sugStatus = $("sugStatus"), sugLink = $("b_sug_enviar");
+// El mailto lo construye el propio navegador con el correo predeterminado del usuario.
+function mailtoHref() {
+  const body = $("sug_msg").value.trim();
+  const ctx = `\n\n---\nEspecie: ${$("tipo").selectedOptions[0].textContent}\nVista: ${state.view}\nVariante: ${state.seed}`;
+  const q = `subject=${encodeURIComponent(SUGGESTIONS.subject)}&body=${encodeURIComponent((body || "") + ctx)}`;
+  return `mailto:${SUGGESTIONS.to}?${q}`;
+}
+$("b_sugerencias").addEventListener("click", () => { closeExport(); closeDrawer(); sugStatus.textContent = ""; sugLink.href = mailtoHref(); dlg.showModal(); $("sug_msg").focus(); });
+$("sug_msg").addEventListener("input", () => { sugLink.href = mailtoHref(); });
+sugLink.addEventListener("click", () => { sugLink.href = mailtoHref(); sugStatus.textContent = "Si no se abre el correo, copia efedegam@gmail.com y escribe desde tu cuenta."; });
 $("b_sug_cerrar").addEventListener("click", () => dlg.close());
 dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });  // clic en el fondo
-
-form.addEventListener("submit", async e => {
-  e.preventDefault();
-  const data = Object.fromEntries(new FormData(form));
-  if (!data.message.trim()) { setSugStatus("Escribe tu sugerencia antes de enviarla.", true); $("sug_msg").focus(); return; }
-  if (data.email && !form.elements.email.checkValidity()) { setSugStatus("Revisa el correo: parece que le falta algo.", true); form.elements.email.focus(); return; }
-  if (!SUGGESTIONS.accessKey) { setSugStatus("El buzón todavía no está conectado a un correo, así que el mensaje no se ha enviado.", true); return; }
-  const btn = $("b_sug_enviar");
-  btn.disabled = true; btn.textContent = "Enviando…"; setSugStatus("");
-  try {
-    const res = await fetch(SUGGESTIONS.endpoint, {
-      method: "POST",
-      headers: {"Content-Type": "application/json", Accept: "application/json"},
-      body: JSON.stringify({
-        access_key: SUGGESTIONS.accessKey,
-        subject: "Nueva sugerencia en Plantimanía",
-        from_name: "Plantimanía",
-        name: data.name || "Anónimo",
-        email: data.email || undefined,
-        message: data.message,
-        contexto: `${$("tipo").selectedOptions[0].textContent}, vista ${state.view}, variante ${state.seed}`,
-        botcheck: data.botcheck ? true : undefined,
-      }),
-    });
-    const out = await res.json().catch(() => ({}));
-    if (!res.ok || out.success === false) throw new Error(out.message || res.status);
-    form.reset();
-    setSugStatus("Enviada. Gracias por escribir.");
-  } catch (err) {
-    setSugStatus("No se ha podido enviar. Inténtalo de nuevo en un momento.", true);
-  } finally {
-    btn.disabled = false; btn.textContent = "Enviar sugerencia";
-  }
-});
 
 /* ---------- color de la página: verde, lila o beige ---------- */
 const THEMES = ["verde", "lila", "beige"];
