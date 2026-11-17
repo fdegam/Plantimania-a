@@ -212,7 +212,8 @@ const FORMAT = {
   sdir: v => v + "° " + ["→", "↗", "↑", "↖", "←", "↙", "↓", "↘"][Math.round(v / 45) % 8], salt: v => v + "°", sdist: v => fmtNum(v) + " m",
   rg: v => "× " + fmtNum(v, 2), rp: v => "× " + fmtNum(v, 2),
   simp: v => v > 0 ? Math.round(v * 100) + " %" : "Nada",
-  bosqueN: v => String(v) + " árboles",
+  bosqueDens: v => "× " + fmtNum(v, 2),
+  bosqueSep: v => v < 0.34 ? "Juntas" : v > 0.66 ? "Separadas" : "Intermedia",
   potD: v => fmtNum(v, 2) + " m", potH: v => fmtNum(v, 2) + " m",
   gp: v => fmtNum(v, 2) + " mm", gc: v => fmtNum(v, 2) + " mm", gr: v => fmtNum(v, 2) + " mm", gd: v => fmtNum(v, 2) + " mm",
 };
@@ -232,12 +233,12 @@ function syncInputs() {
   const revit = state.values.simp > 0;
   document.querySelectorAll("#destSeg button").forEach(b => b.setAttribute("aria-checked", String((+b.dataset.simp > 0) === revit)));
   $("b_dxf").textContent = revit ? "Descargar DXF para Revit" : "Descargar DXF para AutoCAD";
-  const bosqueOk = GROVE.has(state.species);
-  $("bosqueOn").setAttribute("aria-checked", String(!!state.values.bosque && bosqueOk));
-  $("bosqueOn").disabled = !bosqueOk;
-  $("bosqueInfo").textContent = bosqueOk ? (state.values.bosque ? state.values.bosqueN + " árboles" : "") : "Solo árboles";
-  $("bosqueN").disabled = !state.values.bosque;
-  $("bosqueN").closest(".range").classList.toggle("off", !state.values.bosque);
+  const nSp = state.values.bosqueSp.length;
+  $("bosqueOn").setAttribute("aria-checked", String(!!state.values.bosque));
+  $("bosqueInfo").textContent = state.values.bosque ? (nSp > 1 ? nSp + " especies" : "") : "";
+  for (const el of document.querySelectorAll("#cardBosque input[data-key]")) el.disabled = !state.values.bosque;
+  $("cardBosque").classList.toggle("off", !state.values.bosque);
+  for (const cb of document.querySelectorAll("#bosqueSpList input")) cb.checked = state.values.bosqueSp.includes(cb.dataset.sp);
   const pot = !!state.values.maceta;
   $("potOn").setAttribute("aria-checked", String(pot));
   for (const id of ["potD", "potH"]) { $(id).disabled = !pot; $(id).closest(".range").classList.toggle("off", !pot); }
@@ -324,6 +325,23 @@ function setPot(on) {
 }
 $("potOn").addEventListener("click", () => setPot(!state.values.maceta));
 $("bosqueOn").addEventListener("click", () => { state.values.bosque = !state.values.bosque; syncInputs(); requestDraw(); });
+// Lista de especies del bosque: se construye a partir del desplegable de especies.
+function buildBosqueList() {
+  const box = $("bosqueSpList");
+  for (const o of document.querySelectorAll("#tipo option")) {
+    const lab = document.createElement("label"); lab.className = "check";
+    const cb = document.createElement("input"); cb.type = "checkbox"; cb.dataset.sp = o.value;
+    lab.append(cb, " " + o.textContent.replace(/\s*\(.*\)$/, ""));
+    box.append(lab);
+  }
+  box.addEventListener("change", e => {
+    const id = e.target.dataset.sp; if (!id) return;
+    const cur = state.values.bosqueSp.filter(x => x !== id);
+    state.values.bosqueSp = e.target.checked ? [...cur, id] : cur; // nuevo array: no tocar los valores por defecto
+    syncInputs(); requestDraw();
+  });
+}
+buildBosqueList();
 $("b_potAjustes").addEventListener("click", () => { openDrawer(); const c = $("cardMaceta"); c.open = true; setTimeout(() => c.scrollIntoView({block: "start", behavior: reduceMotion.matches ? "auto" : "smooth"}), 250); });
 
 $("tipo").addEventListener("change", e => { state.species = e.target.value; motion.leaves = []; applySpecies(); requestDraw(); });

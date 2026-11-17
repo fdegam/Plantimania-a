@@ -544,6 +544,8 @@ input[type=range]:focus-visible { outline: 1.5px dashed var(--stamp); outline-of
 .check input::after { content: ""; width: 9px; height: 5px; margin-top: -2px; border-left: 2px solid var(--stamp); border-bottom: 2px solid var(--stamp); transform: rotate(-48deg) scale(0); transition: transform .1s; }
 .check input:checked::after { transform: rotate(-48deg) scale(1); }
 .check input:disabled { opacity: .4; }
+#bosqueSpList { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 12px; }
+#cardBosque.off .cbody > :not(summary) { opacity: .4; }
 
 /* barra de desplazamiento lila */
 .drawer::-webkit-scrollbar { width: 11px; }

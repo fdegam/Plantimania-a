@@ -260,8 +260,11 @@
     </div></details>
 
     <details class="card" id="cardBosque"><summary><span class="t">Bosque</span></summary><div class="cbody">
-      <div class="range"><label for="bosqueN">Número de árboles</label><output data-for="bosqueN"></output><input type="range" id="bosqueN" data-key="bosqueN" min="2" max="12" step="1"></div>
-      <p class="note">Los árboles se reparten por el terreno con el mismo tamaño que el ejemplar elegido. Solo para árboles (plátano, pino, ciprés, encina…).</p>
+      <div class="range"><label for="bosqueDens">Densidad</label><output data-for="bosqueDens"></output><input type="range" id="bosqueDens" data-key="bosqueDens" min="0.3" max="2" step="0.05"></div>
+      <div class="range"><label for="bosqueSep">Separación entre plantas</label><output data-for="bosqueSep"></output><input type="range" id="bosqueSep" data-key="bosqueSep" min="0" max="1" step="0.05"></div>
+      <p class="note">Especies del bosque (si no marcas ninguna, se usa la elegida):</p>
+      <div id="bosqueSpList" class="cbody-list" role="group" aria-label="Especies del bosque"></div>
+      <p class="note">Las posiciones y el plano de cada planta son aleatorios: la de delante se ve delante en alzado y más abajo en planta.</p>
     </div></details>
 
     <details class="card" id="cardMaceta"><summary><span class="t">Maceta</span></summary><div class="cbody">

@@ -5,6 +5,8 @@ import {drawView} from "./engine/draw.js";
 import {makeDXF, makeSVG, blockName} from "./engine/export.js";
 import {simplifyView} from "./engine/simplify.js";
 import {potLift, potGeometry, potRing} from "./engine/pot.js";
+import {sceneModel} from "./engine/model.js";
+import {buildParams, speciesDefaults} from "./params.js";
 
 const LAYER_CODES = ["VEG_PERIMETRO", "VEG_CONTORNO", "VEG_DETALLE", "VEG_RAICES"];
 
@@ -16,14 +18,32 @@ let cacheKey = null, model = null, views = {}, simple = {};
 
 // Vistas completas (cacheadas) y, encima, la versión con el perímetro simplificado.
 // Mover el control de simplificación no obliga a redibujar la planta.
+// Bosque mixto: los ejemplares ya llevan su estación; la escena se dibuja en primavera
+// para que el motor no vuelva a aplicar la estación sobre el conjunto.
+function drawParams(p) {
+  return p.bosque ? {...p, estacion: "primavera", mode: "masas", tipo: "frondoso", rt: "ninguno", raices: false, maceta: false} : p;
+}
+function buildModel(p) {
+  if (!p.bosque) return gen(p);
+  const species = p.bosqueSp && p.bosqueSp.length ? p.bosqueSp : [p.species];
+  const N = Math.round(3 + 9 * p.bosqueDens);
+  const make = (id, i, sc) => {
+    const S = speciesDefaults(id), base = buildParams(id, {...S}, 1);
+    return buildParams(id, {...S, H: base.H * sc, W: base.W * sc, dens: base.dens * p.dens, cs: p.cs,
+      real: p.real, sombra: p.sombra, relleno: p.relleno, sombraP: false, estacion: p.estacion, tallos: 1, bosque: false, maceta: false}, p.seed * 131 + i * 7 + 1);
+  };
+  return sceneModel(p, species, make, {N, sep: p.bosqueSep, seed: p.seed});
+}
+
 function ensure(p, list) {
   const key = keyOf(p);
-  if (key !== cacheKey) { cacheKey = key; model = gen(p); views = {}; simple = {}; }
+  const pd = drawParams(p);
+  if (key !== cacheKey) { cacheKey = key; model = buildModel(p); views = {}; simple = {}; }
   const out = {}, stats = {};
   for (const v of list) {
     // la isométrica se guarda por giro: cambiar de giro no regenera la planta
     const vk = v === "iso" ? "iso@" + (p.isoRot || 0) : v;
-    if (!views[vk]) views[vk] = drawView(model, p, v);
+    if (!views[vk]) views[vk] = drawView(model, pd, v);
     const k = vk + ":" + (p.simp || 0);
     if (!simple[k]) simple[k] = simplifyView(views[vk], p.simp || 0);
     out[v] = simple[k].view; stats[v] = simple[k].stats;
@@ -37,7 +57,7 @@ let skeletonKey = null, skeleton = null;
 function buildSkeleton(p) {
   const key = cacheKey + "|" + p.estacion + "|" + (p.maceta ? [p.potShape, p.potD, p.potH] : "");
   if (key === skeletonKey) return skeleton;
-  const m = seasonModel(model, p), L = potLift(p);
+  const m = seasonModel(model, drawParams(p)), L = potLift(p);
   const clumps = new Float32Array(m.clumps.length * 5);
   m.clumps.forEach((c, i) => clumps.set([c.x, c.y + L, c.z, c.r, c.sy], i * 5));
   const lines = [], widths = [];

@@ -21,10 +21,8 @@ function shiftModel(m,ox,oz){
     twigs:(m.twigs||[]).map(t=>t.map(sp)),leaves:(m.leaves||[]).map(l=>({outline:l.outline.map(sp),rib:l.rib?l.rib.map(sp):null,center:l.center?l.center.map(sp):null,veins:l.veins?l.veins.map(v_=>v_.map(sp)):undefined})),H:m.H,W:m.W};
 }
 function gen(p){
-  // Bosque: el mismo grupo de ejemplares con su propio número (solo para árboles)
-  const n0=p.bosque&&GROVE.has(p.species)?p.bosqueN:p.tallos;
-  if(GROVE.has(p.species)&&n0>1){
-    const R=mulberry(p.seed*13+7),pos=[[0,0]],n=n0;let tries=0;
+  if(GROVE.has(p.species)&&p.tallos>1){
+    const R=mulberry(p.seed*13+7),pos=[[0,0]],n=p.tallos;let tries=0;
     while(pos.length<n&&tries<500){tries++;const b=pos[Math.floor(R()*pos.length)],a=R()*6.283,d=p.W*U(R,0.55,0.9),q=[b[0]+Math.cos(a)*d,b[1]+Math.sin(a)*d*0.8];
       if(pos.every(o=>Math.hypot(o[0]-q[0],o[1]-q[1])>p.W*0.5))pos.push(q);}
     const parts=pos.map(([ox,oz],i)=>{const sc=i?U(R,0.8,1.08):1;return shiftModel(genOne(Object.assign({},p,{seed:p.seed+i*101,H:p.H*sc,W:p.W*sc,tallos:1})),ox,oz);});
@@ -520,3 +518,33 @@ function genRoots(model,p){
 }
 
 export {v3,dirAE,curve3,leaf3,gen,seasonModel};
+
+/* ---------- bosque mixto (escena) ---------- */
+// Coloca N ejemplares de las especies dadas. Cada uno lleva su profundidad: los de delante
+// tienen z negativa, así en alzado se dibujan encima y en planta quedan más abajo.
+// make(id, i) devuelve los parámetros del ejemplar i; plan = {N, sep, seed}.
+export function sceneModel(p, species, make, plan){
+  const R=mulberry(plan.seed*7919+11);
+  const dims=species.map(id=>SPECIES[id]);
+  const avgW=dims.reduce((a,S)=>a+S.W,0)/dims.length;
+  // separación: 0 = juntas (se tocan), 1 = separadas
+  const minD=avgW*(0.35+1.1*plan.sep);
+  const Lx=Math.max(4,Math.sqrt(plan.N)*avgW*(1.05+1.2*plan.sep));
+  const Lz=Lx*0.6;
+  const pts=[];
+  for(let t=0;t<plan.N*500&&pts.length<plan.N;t++){
+    const x=U(R,-Lx/2,Lx/2), z=U(R,-Lz/2,Lz/2);
+    if(pts.every(q=>Math.hypot(q.x-x,(q.z-z)*1.5)>=minD))pts.push({x,z});
+  }
+  const parts=[];
+  pts.forEach((q,i)=>{
+    const id=species[Math.floor(R()*species.length)], sc=U(R,0.8,1.15);
+    const pi=make(id,i,sc);
+    let m=gen(pi); m=seasonModel(m,pi);
+    parts.push(shiftModel(m,q.x,q.z));
+  });
+  const out={clumps:[],limbs:[],twigs:[],leaves:[],fallen:[],H:Math.max(...parts.map(m=>m.H),1),W:Lx};
+  for(const m of parts){out.clumps.push(...m.clumps);out.limbs.push(...m.limbs);out.twigs.push(...(m.twigs||[]));out.leaves.push(...(m.leaves||[]));out.fallen.push(...(m.fallen||[]));}
+  out.roots={limbs:[],lines:[],spread:0};
+  return out;
+}
