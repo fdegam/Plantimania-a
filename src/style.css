@@ -388,6 +388,17 @@ input[type=number] { width: 84px; font-family: var(--font-ui); font-size: 14px; 
 .seg button + button { border-left: 1px solid var(--ink); }
 .seg button:hover:not(:disabled):not([aria-checked="true"]) { background: var(--beige-08); }
 .seg button[aria-checked="true"] { background: var(--ink); background-image: var(--grain); color: var(--paper-hi); }
+/* Estaciones: pista en píldora con sombra suave; la activa es una píldora sólida y las demás quedan apagadas */
+.seg.seasons {
+  border: 0; border-radius: 999px; padding: 4px; gap: 2px;
+  background: rgba(var(--veil), .14);
+  box-shadow: 0 8px 16px -8px rgba(var(--shadow-ink), .55), inset 0 0 0 1px rgba(var(--veil), .22);
+}
+.seg.seasons button { height: 34px; padding: 0 15px; border-radius: 999px; font-weight: 600; letter-spacing: .06em; }
+.seg.seasons button + button { border-left: 0; }
+.seg.seasons button:not([aria-checked="true"]) { opacity: .8; }
+.seg.seasons button[aria-checked="true"] { box-shadow: 0 3px 8px -2px rgba(var(--shadow-ink), .6); opacity: 1; }
+.seg.seasons button:hover:not(:disabled):not([aria-checked="true"]) { opacity: 1; background: rgba(var(--veil), .1); }
 .seg.icons button { display: grid; place-items: center; width: 36px; padding: 0; }
 .seg.icons svg { width: 17px; height: 17px; }
 
