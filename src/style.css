@@ -351,7 +351,7 @@ canvas#cv:focus-visible { outline: none; }
 .dock {
   position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 2;
   border-top: 1px solid var(--beige-30);
-  display: flex; align-items: flex-end;
+  display: flex; align-items: stretch;
   max-width: calc(100% - 32px);
   padding: 14px 6px 4px;
   background: transparent;
@@ -359,7 +359,7 @@ canvas#cv:focus-visible { outline: none; }
 .group { display: flex; flex-direction: column; gap: 8px; padding: 0 16px; min-width: 0; }
 .group + .group { border-left: 1px dashed var(--beige-30); }
 .label { font: 600 11px/1.4 var(--font-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--stamp); }
-.row-controls { display: flex; align-items: center; gap: 11px; }
+.row-controls { display: flex; align-items: center; gap: 11px; min-height: 38px; }
 
 select, input[type=number] {
   height: 38px; padding: 0 11px;
@@ -590,7 +590,8 @@ input[type=range]:focus-visible { outline: 1.5px dashed var(--stamp); outline-of
   .group:nth-child(2) { order: 3; grid-column: 1 / -1; }
   .group:nth-child(2) .seg { display: flex; }
   .group:nth-child(2) .seg button { flex: 1; padding: 0 2px; font-size: 11px; }
-  .group:nth-child(4) { order: 4; }
+  .group:nth-child(4) { order: 4; grid-column: 1 / -1; }
+  .group:nth-child(6) { order: 6; border-left: 1px dashed var(--beige-30); }
   .group:nth-child(5) { order: 5; border-left: 1px dashed var(--beige-30); }
   #tipo { width: 100%; }
   .drawer { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 80dvh; transform: translateY(calc(100% + 16px)); }
