@@ -536,15 +536,19 @@ export function sceneModel(p, species, make, plan){
     const x=U(R,-Lx/2,Lx/2), z=U(R,-Lz/2,Lz/2);
     if(pts.every(q=>Math.hypot(q.x-x,(q.z-z)*1.5)>=minD))pts.push({x,z});
   }
-  const parts=[];
+  const placed=[];
   pts.forEach((q,i)=>{
     const id=species[Math.floor(R()*species.length)], sc=U(R,0.8,1.15);
     const pi=make(id,i,sc);
     let m=gen(pi); m=seasonModel(m,pi);
-    parts.push(shiftModel(m,q.x,q.z));
+    const sh=shiftModel(m,q.x,q.z);
+    placed.push({m:Object.assign(sh,{roots:{limbs:[],lines:[],spread:0},fallen:[]}),z:q.z});
   });
-  const out={clumps:[],limbs:[],twigs:[],leaves:[],fallen:[],H:Math.max(...parts.map(m=>m.H),1),W:Lx};
-  for(const m of parts){out.clumps.push(...m.clumps);out.limbs.push(...m.limbs);out.twigs.push(...(m.twigs||[]));out.leaves.push(...(m.leaves||[]));out.fallen.push(...(m.fallen||[]));}
+  // de atrás (z mayor) a delante: así cada ejemplar tapa lo de detrás y su sombra cae encima
+  placed.sort((a,b)=>b.z-a.z);
+  const parts=placed.map(o=>o.m);
+  const out={clumps:[],limbs:[],twigs:[],leaves:[],fallen:[],H:Math.max(...parts.map(m=>m.H),1),W:Lx,parts};
+  for(const m of parts){out.clumps.push(...m.clumps);out.limbs.push(...m.limbs);out.twigs.push(...(m.twigs||[]));out.leaves.push(...(m.leaves||[]));}
   out.roots={limbs:[],lines:[],spread:0};
   return out;
 }

@@ -7,6 +7,7 @@ import {simplifyView} from "./engine/simplify.js";
 import {potLift, potGeometry, potRing} from "./engine/pot.js";
 import {sceneModel} from "./engine/model.js";
 import {buildParams, speciesDefaults} from "./params.js";
+import {SPECIES} from "./engine/species.js";
 
 const LAYER_CODES = ["VEG_PERIMETRO", "VEG_CONTORNO", "VEG_DETALLE", "VEG_RAICES"];
 
@@ -27,12 +28,24 @@ function buildModel(p) {
   if (!p.bosque) return gen(p);
   const species = p.bosqueSp && p.bosqueSp.length ? p.bosqueSp : [p.species];
   const N = Math.round(3 + 9 * p.bosqueDens);
+  // Dimensiones: la altura y el ancho del control escalan a todo el bosque, según la especie elegida.
+  const ref = SPECIES[p.species];
+  const kH = p.H / ref.H, kW = p.W / ref.W;
   const make = (id, i, sc) => {
     const S = speciesDefaults(id), base = buildParams(id, {...S}, 1);
-    return buildParams(id, {...S, H: base.H * sc, W: base.W * sc, dens: base.dens * p.dens, cs: p.cs,
+    return buildParams(id, {...S, H: base.H * kH * sc, W: base.W * kW * sc, tr: p.tr, dens: base.dens * p.dens, cs: p.cs,
       real: p.real, sombra: p.sombra, relleno: p.relleno, sombraP: false, estacion: p.estacion, tallos: 1, bosque: false, maceta: false}, p.seed * 131 + i * 7 + 1);
   };
   return sceneModel(p, species, make, {N, sep: p.bosqueSep, seed: p.seed});
+}
+
+// Vista completa. En bosque, cada ejemplar (de atrás adelante) pone su relleno y su sombra en una capa:
+// así la sombra de una planta de delante oscurece a la de detrás.
+function viewOf(v, pd) {
+  const V = drawView(model, pd, v);
+  if (!model.parts) return V;
+  const layers = model.parts.map(part => { const s = drawView(part, pd, v); return {w: s.white, s: s.shadow}; });
+  return {...V, white: [], shadow: [], layers};
 }
 
 function ensure(p, list) {
@@ -43,7 +56,7 @@ function ensure(p, list) {
   for (const v of list) {
     // la isométrica se guarda por giro: cambiar de giro no regenera la planta
     const vk = v === "iso" ? "iso@" + (p.isoRot || 0) : v;
-    if (!views[vk]) views[vk] = drawView(model, pd, v);
+    if (!views[vk]) views[vk] = viewOf(v, pd);
     const k = vk + ":" + (p.simp || 0);
     if (!simple[k]) simple[k] = simplifyView(views[vk], p.simp || 0);
     out[v] = simple[k].view; stats[v] = simple[k].stats;
@@ -118,10 +131,12 @@ function pack(v) {
   const live = packGroup(v.lines.filter(l => !isLitter(l)), v.white.filter(w => !isLitter(w)), v.shadow.filter(s => !isLitter(s)));
   const still = packGroup(v.lines.filter(isLitter), v.white.filter(isLitter), v.shadow.filter(isLitter));
   const crown = packRings(v.lines.filter(l => l.layer === "VEG_PERIMETRO" && l.outer).map(l => l.pts));
+  const layers = (v.layers || []).map(L => ({w: packRings(L.w.flatMap(w => [w.outer, ...w.holes])), s: packRings(L.s)}));
+  const layerBuf = layers.flatMap(L => [L.w.xy.buffer, L.w.start.buffer, L.s.xy.buffer, L.s.start.buffer]);
   return {
-    bb: v.bb, ...live.group, still: still.group, crown, potTop: v.potTop || 0, potR: v.potR || 0,
+    bb: v.bb, ...live.group, layers, still: still.group, crown, potTop: v.potTop || 0, potR: v.potR || 0,
     count: v.lines.length,
-    transfer: [...live.transfer, ...still.transfer, crown.xy.buffer, crown.start.buffer],
+    transfer: [...live.transfer, ...still.transfer, crown.xy.buffer, crown.start.buffer, ...layerBuf],
   };
 }
 

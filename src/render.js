@@ -85,6 +85,11 @@ export function drawScene(ctx, scene, motion, colors, opts) {
     for (const [g, X] of groups) { ringsPath(g.shadow, true, X, shade); ringsPath(g.white, true, X, white); }
     ctx.fillStyle = colors.shadow; ctx.fill(shade, "nonzero");
     ctx.fillStyle = colors.fill; ctx.fill(white, "evenodd");
+    // Bosque: cada ejemplar, de atrás adelante, pinta su relleno y luego su sombra sobre lo de detrás
+    for (const [g, X] of groups) for (const L of g.layers || []) {
+      ctx.fillStyle = colors.shadow; ctx.fill(ringsPath(L.s, true, X, new Path2D()), "nonzero");
+      ctx.fillStyle = colors.fill; ctx.fill(ringsPath(L.w, true, X, new Path2D()), "evenodd");
+    }
 
     const paths = [new Path2D(), new Path2D(), new Path2D(), new Path2D()];
     for (const [g, X] of groups) {
