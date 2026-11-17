@@ -442,7 +442,6 @@ const dlg = $("sugerencias"), sugStatus = $("sugStatus"), sugLink = $("b_sug_env
 function mailtoHref() {
   // Solo destinatario y asunto: el cuerpo sale vacío para que la persona escriba su sugerencia.
   return `mailto:${SUGGESTIONS.to}?subject=${encodeURIComponent(SUGGESTIONS.subject)}`;
-}?${q}`;
 }
 $("b_sugerencias").addEventListener("click", () => { closeExport(); closeDrawer(); sugStatus.textContent = ""; sugLink.href = mailtoHref(); dlg.showModal(); sugLink.focus(); });
 sugLink.addEventListener("click", () => { sugLink.href = mailtoHref(); sugStatus.textContent = "Si no se abre el correo, copia efedegam@gmail.com y escribe desde tu cuenta."; });
